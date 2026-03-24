@@ -59,7 +59,7 @@ def fetch_fred(series_id):
 
 
 def upsert_supabase(table, series_id, observations, units, frequency):
-    endpoint = f"{SUPABASE_URL}/rest/v1/{table}"
+    endpoint = f"{SUPABASE_URL}/rest/v1/{table}?on_conflict=series_id,observation_date"
     records = []
     for o in observations:
         try:
