@@ -42,18 +42,58 @@ st.markdown("""
 
 
 # ── DB connection ───────────────────────────────────────────────────────────────
+def _get_secret(key, fallback_keys=None):
+    """Try [supabase] section first, then top-level keys, then env vars."""
+    import os
+    # 1. Try nested [supabase] section
+    try:
+        return st.secrets["supabase"][key]
+    except (KeyError, Exception):
+        pass
+    # 2. Try top-level secret with the same key name
+    try:
+        return st.secrets[key]
+    except (KeyError, Exception):
+        pass
+    # 3. Try alternate key names passed in
+    for alt in (fallback_keys or []):
+        try:
+            return st.secrets[alt]
+        except (KeyError, Exception):
+            pass
+        if os.environ.get(alt):
+            return os.environ[alt]
+    # 4. Try env vars
+    return os.environ.get(key.upper(), "")
+
+
 @st.cache_resource(show_spinner=False)
 def get_connection():
-    s = st.secrets["supabase"]
-    return psycopg2.connect(
-        host=s["host"],
-        port=int(s.get("port", 6543)),
-        dbname=s["dbname"],
-        user=s["user"],
-        password=s["password"],
+    host     = _get_secret("host",     ["SUPABASE_HOST", "DBT_HOST"])
+    port     = _get_secret("port",     ["SUPABASE_PORT", "DBT_PORT"]) or 6543
+    dbname   = _get_secret("dbname",   ["SUPABASE_DBNAME", "DBT_DATABASE"])
+    user     = _get_secret("user",     ["SUPABASE_USER", "DBT_USER"])
+    password = _get_secret("password", ["SUPABASE_PASSWORD", "DBT_PASSWORD"])
+    schema   = _get_secret("schema",   ["SUPABASE_SCHEMA", "DBT_SCHEMA"]) or "public"
+
+    if not host or not password:
+        st.error(
+            "⚠️ Database credentials not found. "
+            "Please add secrets in Streamlit Cloud: Manage app → Settings → Secrets"
+        )
+        st.stop()
+
+    conn = psycopg2.connect(
+        host=str(host),
+        port=int(port),
+        dbname=str(dbname) or "postgres",
+        user=str(user),
+        password=str(password),
         sslmode="require",
         connect_timeout=15,
+        options=f"-c search_path={schema},public",
     )
+    return conn
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
