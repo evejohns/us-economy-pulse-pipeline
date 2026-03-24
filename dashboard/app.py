@@ -5,11 +5,13 @@ Connects to Supabase PostgreSQL and visualizes US economic indicators.
 
 import streamlit as st
 import psycopg2
+import psycopg2.extras
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # ── Page config ────────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -68,7 +70,8 @@ def _get_secret(key, fallback_keys=None):
 
 
 @st.cache_resource(show_spinner=False)
-def get_connection():
+def _get_conn_params() -> dict:
+    """Cache the connection params (not the connection itself)."""
     host     = _get_secret("host",     ["SUPABASE_HOST", "DBT_HOST"])
     port     = _get_secret("port",     ["SUPABASE_PORT", "DBT_PORT"]) or 6543
     dbname   = _get_secret("dbname",   ["SUPABASE_DBNAME", "DBT_DATABASE"])
@@ -79,53 +82,67 @@ def get_connection():
     if not host or not password:
         st.error(
             "⚠️ Database credentials not found. "
-            "Please add secrets in Streamlit Cloud: Manage app → Settings → Secrets"
+            "Go to: Manage app → Settings → Secrets and add your Supabase credentials."
         )
         st.stop()
 
-    conn = psycopg2.connect(
-        host=str(host),
-        port=int(port),
+    return dict(
+        host=str(host), port=int(port),
         dbname=str(dbname) or "postgres",
-        user=str(user),
-        password=str(password),
-        sslmode="require",
-        connect_timeout=15,
+        user=str(user), password=str(password),
+        sslmode="require", connect_timeout=15,
         options=f"-c search_path={schema},public",
     )
-    return conn
 
 
-@st.cache_data(ttl=3600, show_spinner=False)
-def query(sql: str) -> pd.DataFrame:
-    conn = get_connection()
-    return pd.read_sql(sql, conn)
+def _new_conn():
+    """Open a fresh connection (used per-thread)."""
+    return psycopg2.connect(**_get_conn_params())
 
 
-# ── Load data ───────────────────────────────────────────────────────────────────
-@st.cache_data(ttl=3600, show_spinner=False)
-def load_overview() -> pd.Series:
-    df = query("SELECT * FROM vw_economic_overview_dashboard LIMIT 1")
-    if df.empty:
-        return pd.Series()
-    return df.iloc[0]
+@st.cache_resource(show_spinner=False)
+def _get_dbt_schema() -> str:
+    """Auto-discover the schema that contains dbt mart views."""
+    # 1. Use explicit secret if provided
+    schema = _get_secret("schema", ["SUPABASE_SCHEMA", "DBT_SCHEMA"])
+    if schema:
+        return str(schema)
+    # 2. Auto-detect by finding vw_economic_overview_dashboard in information_schema
+    try:
+        with _new_conn() as conn:
+            df = pd.read_sql(
+                "SELECT table_schema FROM information_schema.views "
+                "WHERE table_name = 'vw_economic_overview_dashboard' LIMIT 1",
+                conn,
+            )
+            if not df.empty:
+                return df.iloc[0]["table_schema"]
+    except Exception:
+        pass
+    return "public"
 
 
-@st.cache_data(ttl=3600, show_spinner=False)
-def load_inflation_history() -> pd.DataFrame:
-    return query("""
+def _run_query(sql: str) -> pd.DataFrame:
+    """Execute a single query on its own connection with the correct schema."""
+    params = _get_conn_params().copy()
+    schema = _get_dbt_schema()
+    params["options"] = f"-c search_path={schema},public"
+    with psycopg2.connect(**params) as conn:
+        return pd.read_sql(sql, conn)
+
+
+# ── Load all data in parallel ────────────────────────────────────────────────────
+QUERIES = {
+    "overview": "SELECT * FROM vw_economic_overview_dashboard LIMIT 1",
+    "inflation": """
         SELECT period_date_key, year_month, yoy_inflation_rate_pct,
                mom_inflation_change_pct, inflation_severity_category,
                fedfunds_rate_pct, fed_policy_stance_to_inflation
         FROM fct_inflation_analysis
         WHERE period_date_key >= '2000-01-01'
         ORDER BY period_date_key
-    """)
-
-
-@st.cache_data(ttl=3600, show_spinner=False)
-def load_recession_history() -> pd.DataFrame:
-    return query("""
+    """,
+    "recession": """
         SELECT period_date_key, year_quarter, gdp_billions_usd,
                qoq_growth_pct, unemployment_rate_pct, yoy_inflation_rate_pct,
                recession_risk_level, recession_intensity_score,
@@ -133,12 +150,8 @@ def load_recession_history() -> pd.DataFrame:
         FROM fct_recession_analysis
         WHERE period_date_key >= '2000-01-01'
         ORDER BY period_date_key
-    """)
-
-
-@st.cache_data(ttl=3600, show_spinner=False)
-def load_employment_history() -> pd.DataFrame:
-    return query("""
+    """,
+    "employment": """
         SELECT period_date_key, year_month, unemployment_rate_pct,
                unemployment_yoy_change_pct, unemployment_trend,
                housing_starts_thousands, labor_market_health_score,
@@ -146,7 +159,41 @@ def load_employment_history() -> pd.DataFrame:
         FROM fct_employment_analysis
         WHERE period_date_key >= '2000-01-01'
         ORDER BY period_date_key
-    """)
+    """,
+}
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def load_all_data() -> dict:
+    """Fetch all four datasets in parallel threads."""
+    results = {}
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        futures = {pool.submit(_run_query, sql): name for name, sql in QUERIES.items()}
+        for future in as_completed(futures):
+            name = futures[future]
+            try:
+                results[name] = future.result()
+            except Exception as e:
+                st.warning(f"Could not load {name}: {e}")
+                results[name] = pd.DataFrame()
+    return results
+
+
+def load_overview(data) -> pd.Series:
+    df = data.get("overview", pd.DataFrame())
+    return df.iloc[0] if not df.empty else pd.Series()
+
+
+def load_inflation_history(data) -> pd.DataFrame:
+    return data.get("inflation", pd.DataFrame())
+
+
+def load_recession_history(data) -> pd.DataFrame:
+    return data.get("recession", pd.DataFrame())
+
+
+def load_employment_history(data) -> pd.DataFrame:
+    return data.get("employment", pd.DataFrame())
 
 
 # ── Color helpers ───────────────────────────────────────────────────────────────
@@ -180,7 +227,11 @@ st.markdown(
 )
 
 with st.spinner("Loading latest data..."):
-    ov = load_overview()
+    _data = load_all_data()
+    ov   = load_overview(_data)
+    infl = load_inflation_history(_data)
+    rec  = load_recession_history(_data)
+    emp  = load_employment_history(_data)
 
 if ov.empty:
     st.error("No data found. Make sure the pipeline has run and the views exist in Supabase.")
@@ -262,7 +313,6 @@ col_gdp, col_risk = st.columns([2, 1])
 
 with col_gdp:
     st.subheader("GDP Growth — Quarter over Quarter")
-    rec = load_recession_history()
     if not rec.empty:
         colors = ["#ef4444" if v < 0 else "#4c9be8" for v in rec["qoq_growth_pct"].fillna(0)]
         fig = go.Figure(go.Bar(
@@ -306,8 +356,6 @@ st.divider()
 
 # ── Row 2: Inflation + Fed Funds ────────────────────────────────────────────────
 st.subheader("Inflation & Monetary Policy")
-infl = load_inflation_history()
-
 if not infl.empty:
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
@@ -344,8 +392,6 @@ st.divider()
 
 # ── Row 3: Unemployment + Housing ───────────────────────────────────────────────
 col_unemp, col_house = st.columns(2)
-
-emp = load_employment_history()
 
 with col_unemp:
     st.subheader("Unemployment Rate")
