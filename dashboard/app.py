@@ -69,97 +69,86 @@ def _get_secret(key, fallback_keys=None):
     return os.environ.get(key.upper(), "")
 
 
-@st.cache_resource(show_spinner=False)
-def _get_conn_params() -> dict:
-    """Cache the connection params (not the connection itself)."""
-    host     = _get_secret("host",     ["SUPABASE_HOST", "DBT_HOST"])
-    port     = _get_secret("port",     ["SUPABASE_PORT", "DBT_PORT"]) or 6543
-    dbname   = _get_secret("dbname",   ["SUPABASE_DBNAME", "DBT_DATABASE"])
-    user     = _get_secret("user",     ["SUPABASE_USER", "DBT_USER"])
-    password = _get_secret("password", ["SUPABASE_PASSWORD", "DBT_PASSWORD"])
-    schema   = _get_secret("schema",   ["SUPABASE_SCHEMA", "DBT_SCHEMA"]) or "public"
-
-    if not host or not password:
-        st.error(
-            "⚠️ Database credentials not found. "
-            "Go to: Manage app → Settings → Secrets and add your Supabase credentials."
-        )
-        st.stop()
-
-    return dict(
-        host=str(host), port=int(port),
-        dbname=str(dbname) or "postgres",
-        user=str(user), password=str(password),
-        sslmode="require", connect_timeout=15,
-        options=f"-c search_path={schema},public",
-    )
-
-
-def _new_conn():
-    """Open a fresh connection (used per-thread)."""
-    return psycopg2.connect(**_get_conn_params())
-
-
-@st.cache_resource(show_spinner=False)
-def _get_dbt_schema() -> str:
-    """Auto-discover the schema that contains dbt mart views."""
-    # 1. Use explicit secret if provided
+def _get_schema() -> str:
+    """Read schema from secrets, or auto-discover it."""
     schema = _get_secret("schema", ["SUPABASE_SCHEMA", "DBT_SCHEMA"])
     if schema:
         return str(schema)
-    # 2. Auto-detect by finding vw_economic_overview_dashboard in information_schema
+    # Auto-discover by querying information_schema
     try:
-        with _new_conn() as conn:
-            df = pd.read_sql(
-                "SELECT table_schema FROM information_schema.views "
-                "WHERE table_name = 'vw_economic_overview_dashboard' LIMIT 1",
-                conn,
-            )
-            if not df.empty:
-                return df.iloc[0]["table_schema"]
+        conn = psycopg2.connect(
+            host=str(_get_secret("host", ["SUPABASE_HOST", "DBT_HOST"])),
+            port=int(_get_secret("port", ["SUPABASE_PORT", "DBT_PORT"]) or 6543),
+            dbname=str(_get_secret("dbname", ["SUPABASE_DBNAME", "DBT_DATABASE"]) or "postgres"),
+            user=str(_get_secret("user", ["SUPABASE_USER", "DBT_USER"])),
+            password=str(_get_secret("password", ["SUPABASE_PASSWORD", "DBT_PASSWORD"])),
+            sslmode="require", connect_timeout=15,
+        )
+        df = pd.read_sql(
+            "SELECT table_schema FROM information_schema.views "
+            "WHERE table_name = 'vw_economic_overview_dashboard' LIMIT 1",
+            conn,
+        )
+        conn.close()
+        if not df.empty:
+            return df.iloc[0]["table_schema"]
     except Exception:
         pass
     return "public"
 
 
 def _run_query(sql: str) -> pd.DataFrame:
-    """Execute a single query on its own connection with the correct schema."""
-    params = _get_conn_params().copy()
-    schema = _get_dbt_schema()
-    params["options"] = f"-c search_path={schema},public"
-    with psycopg2.connect(**params) as conn:
+    """Execute a single query — reads secrets fresh every time."""
+    host     = str(_get_secret("host",     ["SUPABASE_HOST", "DBT_HOST"]))
+    port     = int(_get_secret("port",     ["SUPABASE_PORT", "DBT_PORT"]) or 6543)
+    dbname   = str(_get_secret("dbname",   ["SUPABASE_DBNAME", "DBT_DATABASE"]) or "postgres")
+    user     = str(_get_secret("user",     ["SUPABASE_USER", "DBT_USER"]))
+    password = str(_get_secret("password", ["SUPABASE_PASSWORD", "DBT_PASSWORD"]))
+    schema   = _get_schema()
+
+    if not host or not password:
+        raise RuntimeError("Missing Supabase credentials in secrets.")
+
+    conn = psycopg2.connect(
+        host=host, port=port, dbname=dbname, user=user, password=password,
+        sslmode="require", connect_timeout=15,
+        options=f"-c search_path={schema},public",
+    )
+    try:
         return pd.read_sql(sql, conn)
+    finally:
+        conn.close()
 
 
 # ── Load all data in parallel ────────────────────────────────────────────────────
 QUERIES = {
     "overview": "SELECT * FROM vw_economic_overview_dashboard LIMIT 1",
-    "inflation": """
-        SELECT period_date_key, year_month, yoy_inflation_rate_pct,
-               mom_inflation_change_pct, inflation_severity_category,
-               fedfunds_rate_pct, fed_policy_stance_to_inflation
-        FROM fct_inflation_analysis
-        WHERE period_date_key >= '2000-01-01'
-        ORDER BY period_date_key
-    """,
-    "recession": """
-        SELECT period_date_key, year_quarter, gdp_billions_usd,
-               qoq_growth_pct, unemployment_rate_pct, yoy_inflation_rate_pct,
-               recession_risk_level, recession_intensity_score,
-               consecutive_negative_quarters
-        FROM fct_recession_analysis
-        WHERE period_date_key >= '2000-01-01'
-        ORDER BY period_date_key
-    """,
-    "employment": """
-        SELECT period_date_key, year_month, unemployment_rate_pct,
-               unemployment_yoy_change_pct, unemployment_trend,
-               housing_starts_thousands, labor_market_health_score,
-               labor_market_condition
-        FROM fct_employment_analysis
-        WHERE period_date_key >= '2000-01-01'
-        ORDER BY period_date_key
-    """,
+    "inflation": (
+        "SELECT period_date_key, year_month, yoy_inflation_rate_pct, "
+        "mom_inflation_change_pct, inflation_severity_category, "
+        "fedfunds_rate_pct, fed_policy_stance_to_inflation "
+        "FROM fct_inflation_analysis "
+        "WHERE period_date_key > '1999-12-31' "
+        "ORDER BY period_date_key"
+    ),
+    "recession": (
+        "SELECT period_date_key, year_quarter, gdp_billions_usd, "
+        "qoq_growth_pct, unemployment_rate_pct, yoy_inflation_rate_pct, "
+        "recession_risk_level, recession_intensity_score, "
+        "consecutive_negative_quarters "
+        "FROM fct_recession_analysis "
+        "WHERE period_date_key > '1999-12-31' "
+        "ORDER BY period_date_key"
+    ),
+    "employment": (
+        "SELECT period_date_key, year_month, unemployment_rate_pct, "
+        "unemployment_yoy_change_pct, unemployment_trend, "
+        "housing_starts_thousands, labor_market_health_score, "
+        "labor_market_condition "
+        "FROM fct_employment_analysis "
+        "WHERE period_date_key > '1999-12-31' "
+        "ORDER BY period_date_key"
+    ),
 }
 
 
