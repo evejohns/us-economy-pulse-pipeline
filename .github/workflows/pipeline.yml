@@ -1,0 +1,67 @@
+name: US Economy Pulse Pipeline
+
+on:
+  schedule:
+    # Runs every Monday at 8am UTC (FRED updates most series weekly)
+    - cron: '0 8 * * 1'
+  workflow_dispatch:
+    # Allows manual trigger from GitHub Actions tab
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          pip install requests python-dotenv
+
+      - name: Run FRED backfill (ingest latest data)
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          python run_backfill.py
+
+      - name: Install dbt dependencies
+        run: |
+          pip install dbt-postgres
+
+      - name: Create dbt profiles.yml
+        run: |
+          cat > dbt_project/profiles.yml << 'EOF'
+us_economy_pulse:
+  target: prod
+  outputs:
+    prod:
+      type: postgres
+      host: "${{ secrets.DBT_HOST }}"
+      user: "${{ secrets.DBT_USER }}"
+      password: "${{ secrets.DBT_PASSWORD }}"
+      port: ${{ secrets.DBT_PORT }}
+      dbname: "${{ secrets.DBT_DATABASE }}"
+      schema: "${{ secrets.DBT_SCHEMA }}"
+      connect_timeout: 30
+      sslmode: require
+EOF
+
+      - name: Run dbt transformations
+        run: |
+          cd dbt_project
+          dbt deps
+          dbt run --profiles-dir .
+          dbt test --profiles-dir . --store-failures
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "Pipeline failed at $(date). Check the Actions tab for details."
