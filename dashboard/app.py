@@ -69,33 +69,6 @@ def _get_secret(key, fallback_keys=None):
     return os.environ.get(key.upper(), "")
 
 
-def _get_schema() -> str:
-    """Read schema from secrets, or auto-discover it."""
-    schema = _get_secret("schema", ["SUPABASE_SCHEMA", "DBT_SCHEMA"])
-    if schema:
-        return str(schema)
-    # Auto-discover by querying information_schema
-    try:
-        conn = psycopg2.connect(
-            host=str(_get_secret("host", ["SUPABASE_HOST", "DBT_HOST"])),
-            port=int(_get_secret("port", ["SUPABASE_PORT", "DBT_PORT"]) or 6543),
-            dbname=str(_get_secret("dbname", ["SUPABASE_DBNAME", "DBT_DATABASE"]) or "postgres"),
-            user=str(_get_secret("user", ["SUPABASE_USER", "DBT_USER"])),
-            password=str(_get_secret("password", ["SUPABASE_PASSWORD", "DBT_PASSWORD"])),
-            sslmode="require", connect_timeout=15,
-        )
-        df = pd.read_sql(
-            "SELECT table_schema FROM information_schema.views "
-            "WHERE table_name = 'vw_economic_overview_dashboard' LIMIT 1",
-            conn,
-        )
-        conn.close()
-        if not df.empty:
-            return df.iloc[0]["table_schema"]
-    except Exception:
-        pass
-    return "public"
-
 
 def _run_query(sql: str) -> pd.DataFrame:
     """Execute a single query — reads secrets fresh every time."""
@@ -104,7 +77,6 @@ def _run_query(sql: str) -> pd.DataFrame:
     dbname   = str(_get_secret("dbname",   ["SUPABASE_DBNAME", "DBT_DATABASE"]) or "postgres")
     user     = str(_get_secret("user",     ["SUPABASE_USER", "DBT_USER"]))
     password = str(_get_secret("password", ["SUPABASE_PASSWORD", "DBT_PASSWORD"]))
-    schema   = _get_schema()
 
     if not host or not password:
         raise RuntimeError("Missing Supabase credentials in secrets.")
@@ -112,7 +84,6 @@ def _run_query(sql: str) -> pd.DataFrame:
     conn = psycopg2.connect(
         host=host, port=port, dbname=dbname, user=user, password=password,
         sslmode="require", connect_timeout=15,
-        options=f"-c search_path={schema},public",
     )
     try:
         return pd.read_sql(sql, conn)
@@ -120,14 +91,18 @@ def _run_query(sql: str) -> pd.DataFrame:
         conn.close()
 
 
-# ── Load all data in parallel ────────────────────────────────────────────────────
+# ── Schema + queries ─────────────────────────────────────────────────────────────
+# Supabase transaction pooler (PgBouncer) ignores search_path options,
+# so we use fully qualified schema.table names in every query.
+_S = _get_secret("schema", ["SUPABASE_SCHEMA", "DBT_SCHEMA"]) or "public_analytics"
+
 QUERIES = {
-    "overview": "SELECT * FROM vw_economic_overview_dashboard LIMIT 1",
+    "overview": f"SELECT * FROM {_S}.vw_economic_overview_dashboard LIMIT 1",
     "inflation": (
         "SELECT period_date_key, year_month, yoy_inflation_rate_pct, "
         "mom_inflation_change_pct, inflation_severity_category, "
         "fedfunds_rate_pct, fed_policy_stance_to_inflation "
-        "FROM fct_inflation_analysis "
+        f"FROM {_S}.fct_inflation_analysis "
         "WHERE period_date_key > '1999-12-31' "
         "ORDER BY period_date_key"
     ),
@@ -136,7 +111,7 @@ QUERIES = {
         "qoq_growth_pct, unemployment_rate_pct, yoy_inflation_rate_pct, "
         "recession_risk_level, recession_intensity_score, "
         "consecutive_negative_quarters "
-        "FROM fct_recession_analysis "
+        f"FROM {_S}.fct_recession_analysis "
         "WHERE period_date_key > '1999-12-31' "
         "ORDER BY period_date_key"
     ),
@@ -145,7 +120,7 @@ QUERIES = {
         "unemployment_yoy_change_pct, unemployment_trend, "
         "housing_starts_thousands, labor_market_health_score, "
         "labor_market_condition "
-        "FROM fct_employment_analysis "
+        f"FROM {_S}.fct_employment_analysis "
         "WHERE period_date_key > '1999-12-31' "
         "ORDER BY period_date_key"
     ),
