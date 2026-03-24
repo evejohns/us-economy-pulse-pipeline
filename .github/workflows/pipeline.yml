@@ -45,8 +45,46 @@ jobs:
           DBT_DATABASE: ${{ secrets.DBT_DATABASE }}
           DBT_SCHEMA: ${{ secrets.DBT_SCHEMA }}
         run: |
-          mkdir -p ~/.dbt
-          printf "us_economy_pulse:\n  target: prod\n  outputs:\n    prod:\n      type: postgres\n      host: \"${DBT_HOST}\"\n      user: \"${DBT_USER}\"\n      password: \"${DBT_PASSWORD}\"\n      port: ${DBT_PORT}\n      dbname: \"${DBT_DATABASE}\"\n      schema: \"${DBT_SCHEMA}\"\n      connect_timeout: 30\n      sslmode: require\n" > ~/.dbt/profiles.yml
+          python3 -c "
+          import os, pathlib
+          content = '''us_economy_pulse:
+            target: prod
+            outputs:
+              prod:
+                type: postgres
+                host: \"{}\"
+                user: \"{}\"
+                password: \"{}\"
+                port: {}
+                dbname: \"{}\"
+                schema: \"{}\"
+                connect_timeout: 30
+                sslmode: require
+          '''.format(
+              os.environ['DBT_HOST'],
+              os.environ['DBT_USER'],
+              os.environ['DBT_PASSWORD'],
+              os.environ['DBT_PORT'],
+              os.environ['DBT_DATABASE'],
+              os.environ['DBT_SCHEMA']
+          )
+          p = pathlib.Path.home() / '.dbt'
+          p.mkdir(exist_ok=True)
+          (p / 'profiles.yml').write_text(content)
+          "
+
+      - name: Debug connection info
+        env:
+          DBT_HOST: ${{ secrets.DBT_HOST }}
+          DBT_USER: ${{ secrets.DBT_USER }}
+          DBT_PORT: ${{ secrets.DBT_PORT }}
+        run: |
+          echo "Host length: ${#DBT_HOST}"
+          echo "User length: ${#DBT_USER}"
+          echo "Port: ${DBT_PORT}"
+          echo "User starts with: ${DBT_USER:0:12}..."
+          echo "Host starts with: ${DBT_HOST:0:12}..."
+          cat ~/.dbt/profiles.yml | sed 's/password:.*/password: "***"/'
 
       - name: Run dbt transformations
         run: |
