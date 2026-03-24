@@ -1,0 +1,155 @@
+name: Security Scan
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  secret-scan:
+    name: Secret Detection
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@eace28b7f5e2200c193a768442f8ab546ffe0d8b  # v4.1.1
+
+      - name: Set up Python
+        uses: actions/setup-python@0b93645e9fea7318ecad2b985db20817422f6fd0  # v5.0.0
+        with:
+          python-version: '3.11'
+
+      - name: Run secret audit scanner
+        run: |
+          python src/security/audit_secrets.py --path .
+        continue-on-error: false
+
+  dependency-scan:
+    name: Dependency Vulnerability Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@eace28b7f5e2200c193a768442f8ab546ffe0d8b  # v4.1.1
+
+      - name: Set up Python
+        uses: actions/setup-python@0b93645e9fea7318ecad2b985db20817422f6fd0  # v5.0.0
+        with:
+          python-version: '3.11'
+
+      - name: Install pip-audit
+        run: |
+          pip install pip-audit --quiet
+
+      - name: Check for vulnerable dependencies
+        run: |
+          if [ -f requirements.txt ]; then
+            pip-audit -r requirements.txt --strict
+          else
+            echo "No requirements.txt found, skipping dependency scan"
+          fi
+        continue-on-error: false
+
+  gitignore-verify:
+    name: Gitignore Verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@eace28b7f5e2200c193a768442f8ab546ffe0d8b  # v4.1.1
+        with:
+          fetch-depth: 0
+
+      - name: Check for tracked secrets files
+        run: |
+          echo "Checking for accidentally tracked secret files..."
+          TRACKED_SECRETS=0
+
+          # Check for tracked .env files
+          if git ls-files | grep -E '^\.env\.' | grep -v '\.env\.example'; then
+            echo "❌ Found tracked .env files (should be in .gitignore)"
+            TRACKED_SECRETS=1
+          fi
+
+          # Check for tracked profiles.yml (dbt credentials)
+          if git ls-files | grep -E 'profiles\.yml$' | grep -v 'profiles\.yml\.example'; then
+            echo "❌ Found tracked profiles.yml (should be in .gitignore)"
+            TRACKED_SECRETS=1
+          fi
+
+          # Check for tracked credentials/key files
+          if git ls-files | grep -E '\.(pem|key|pub|p12|pfx)$'; then
+            echo "❌ Found tracked credential files (should be in .gitignore)"
+            TRACKED_SECRETS=1
+          fi
+
+          if [ $TRACKED_SECRETS -eq 0 ]; then
+            echo "✓ No tracked secret files detected"
+          fi
+
+          exit $TRACKED_SECRETS
+
+  container-scan:
+    name: Container Image Scan (optional)
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.message, '[docker]') || github.event_name == 'push'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@eace28b7f5e2200c193a768442f8ab546ffe0d8b  # v4.1.1
+
+      - name: Check for Dockerfile
+        id: dockerfile
+        run: |
+          if [ -f Dockerfile ]; then
+            echo "found=true" >> $GITHUB_OUTPUT
+          else
+            echo "found=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run Trivy vulnerability scanner
+        if: steps.dockerfile.outputs.found == 'true'
+        uses: aquasecurity/trivy-action@6e7b7d1fd3e4692731f925e4b8e656e0318cfde1  # v0.24.0
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy results to GitHub Security
+        if: steps.dockerfile.outputs.found == 'true'
+        uses: github/codeql-action/upload-sarif@662c8f76dc01a7f1df5f5e09ca0cb0f5e96c3a55  # v3.24.1
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  code-quality:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@eace28b7f5e2200c193a768442f8ab546ffe0d8b  # v4.1.1
+
+      - name: Set up Python
+        uses: actions/setup-python@0b93645e9fea7318ecad2b985db20817422f6fd0  # v5.0.0
+        with:
+          python-version: '3.11'
+
+      - name: Install linting tools
+        run: |
+          pip install bandit flake8 --quiet
+
+      - name: Run Bandit security linter
+        run: |
+          bandit -r src/ -ll -f json -o bandit-report.json 2>/dev/null || true
+          echo "Bandit report generated (info only)"
+        continue-on-error: true
+
+      - name: Run Flake8 code linter
+        run: |
+          flake8 src/ --max-line-length=100 --count --statistics || true
+        continue-on-error: true

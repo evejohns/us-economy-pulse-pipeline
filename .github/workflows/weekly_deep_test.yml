@@ -1,0 +1,144 @@
+name: Weekly Deep Test
+
+on:
+  # Run every Sunday at 6 AM UTC
+  schedule:
+    - cron: '0 6 * * 0'
+  # Allow manual triggering
+  workflow_dispatch:
+
+# Prevent concurrent runs of this workflow
+concurrency:
+  group: weekly-deep-test
+  cancel-in-progress: false
+
+jobs:
+  deep-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    # Minimal permissions - only read access to repo contents
+    permissions:
+      contents: read
+
+    env:
+      # Set dbt profiles directory for dbt commands
+      DBT_PROFILES_DIR: ./dbt_project
+      # Secrets referenced at job level for clarity
+      FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+    steps:
+      # 1. Checkout repository code
+      - name: Checkout code
+        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+
+      # 2. Set up Python 3.11
+      - name: Set up Python 3.11
+        uses: actions/setup-python@0a5c61591373683ada265d370569acf60f21e5d4 # v5.0.0
+        with:
+          python-version: '3.11'
+
+      # 3. Cache pip dependencies to speed up subsequent runs
+      - name: Cache pip dependencies
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            pip-${{ runner.os }}-
+
+      # 4. Install Python dependencies
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+        continue-on-error: false
+
+      # 5. Run full ingestion backfill (last 30 days)
+      # Comprehensive data reload to catch any missed or stale records
+      - name: Run FRED backfill ingestion (30 days)
+        run: python src/ingestion/run_ingestion.py --mode backfill --days 30
+        continue-on-error: false
+
+      # 6. Install dbt dependencies
+      - name: Install dbt dependencies
+        run: cd dbt_project && dbt deps
+        continue-on-error: false
+
+      # 7. Run dbt with full refresh (rebuild all models from scratch)
+      # Ensures model definitions and dependencies are correctly validated
+      - name: Run dbt models with full refresh
+        run: cd dbt_project && dbt run --full-refresh
+        continue-on-error: false
+
+      # 8. Run comprehensive dbt tests including anomaly detection
+      # Full validation of data integrity and business logic
+      - name: Run comprehensive dbt tests
+        run: cd dbt_project && dbt test
+        continue-on-error: false
+
+      # 9. Check dbt source freshness
+      # Validates that all external data sources are up-to-date
+      - name: Check dbt source freshness
+        run: cd dbt_project && dbt source freshness
+        continue-on-error: false
+
+      # 10. Run full quality check suite
+      # Final comprehensive validation across all data stages
+      - name: Run full quality check suite
+        run: python src/quality/run_quality_checks.py --stage full
+        continue-on-error: false
+
+      # 11. Generate dbt documentation
+      # Creates HTML documentation of data lineage and models
+      - name: Generate dbt documentation
+        run: cd dbt_project && dbt docs generate
+        continue-on-error: false
+
+      # 12. Upload dbt docs as artifact for GitHub Pages deployment
+      - name: Upload dbt docs artifact
+        uses: actions/upload-artifact@v4.3.1 # v4.3.1
+        if: always()
+        with:
+          name: dbt-docs
+          path: dbt_project/target/
+          retention-days: 30
+
+      # 13. Send Slack notification with summary
+      - name: Send Slack notification
+        if: always()
+        run: |
+          python -c "
+          import requests
+          import json
+          from datetime import datetime
+
+          status = 'passed' if '${{ job.status }}' == 'success' else 'failed'
+          color = '36a64f' if status == 'passed' else 'ff0000'
+
+          message = {
+              'attachments': [{
+                  'color': color,
+                  'title': f'Weekly Deep Test {status.upper()}',
+                  'text': f'Full 30-day backfill and comprehensive test suite\nRun: ${{ github.run_id }}\nTime: {datetime.now().isoformat()}',
+                  'actions': [{
+                      'type': 'button',
+                      'text': 'View Run',
+                      'url': '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+                  }]
+              }]
+          }
+
+          requests.post('${{ env.SLACK_WEBHOOK_URL }}', json=message)
+          "
+
+      # Add summary of test execution to GitHub Actions summary
+      - name: Add job summary
+        if: always()
+        run: |
+          echo "## Weekly Deep Test Execution Summary" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Run ID:** ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Test Type:** Full refresh + 30-day backfill" >> $GITHUB_STEP_SUMMARY
+          echo "**Artifacts:** dbt docs generated and uploaded" >> $GITHUB_STEP_SUMMARY

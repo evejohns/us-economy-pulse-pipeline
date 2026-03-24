@@ -1,0 +1,142 @@
+name: Manual Backfill
+
+on:
+  # Manual trigger only with user-provided inputs
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: 'Start date (YYYY-MM-DD)'
+        required: true
+        type: string
+      end_date:
+        description: 'End date (YYYY-MM-DD, defaults to today)'
+        required: false
+        type: string
+      series:
+        description: 'Comma-separated series IDs (defaults to all)'
+        required: false
+        type: string
+
+# Prevent concurrent backfill operations
+concurrency:
+  group: backfill-pipeline
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    # Minimal permissions - only read access to repo contents
+    permissions:
+      contents: read
+
+    env:
+      # Set dbt profiles directory for dbt commands
+      DBT_PROFILES_DIR: ./dbt_project
+      # Secrets referenced at job level for clarity
+      FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+    steps:
+      # 1. Checkout repository code
+      - name: Checkout code
+        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+
+      # 2. Set up Python 3.11
+      - name: Set up Python 3.11
+        uses: actions/setup-python@0a5c61591373683ada265d370569acf60f21e5d4 # v5.0.0
+        with:
+          python-version: '3.11'
+
+      # 3. Cache pip dependencies to speed up subsequent runs
+      - name: Cache pip dependencies
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            pip-${{ runner.os }}-
+
+      # 4. Install Python dependencies
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+        continue-on-error: false
+
+      # 5. Run backfill ingestion with user-provided parameters
+      # Allows flexible date ranges and selective series ingestion
+      - name: Run backfill ingestion
+        run: |
+          python src/ingestion/run_ingestion.py \
+            --mode backfill \
+            --start-date "${{ inputs.start_date }}" \
+            --end-date "${{ inputs.end_date || 'today' }}" \
+            --series "${{ inputs.series || 'all' }}"
+        continue-on-error: false
+
+      # 6. Install dbt dependencies
+      - name: Install dbt dependencies
+        run: cd dbt_project && dbt deps
+        continue-on-error: false
+
+      # 7. Run dbt with full refresh to rebuild models with backfilled data
+      - name: Run dbt models with full refresh
+        run: cd dbt_project && dbt run --full-refresh
+        continue-on-error: false
+
+      # 8. Run dbt tests to validate backfilled data quality
+      - name: Run dbt tests
+        run: cd dbt_project && dbt test
+        continue-on-error: false
+
+      # 9. Run post-backfill quality checks
+      - name: Run post-backfill quality checks
+        run: python src/quality/run_quality_checks.py --stage post
+        continue-on-error: false
+
+      # 10. Send Slack notification with backfill summary
+      - name: Send Slack notification
+        if: always()
+        run: |
+          python -c "
+          import requests
+          import json
+          from datetime import datetime
+
+          status = 'passed' if '${{ job.status }}' == 'success' else 'failed'
+          color = '36a64f' if status == 'passed' else 'ff0000'
+
+          message = {
+              'attachments': [{
+                  'color': color,
+                  'title': f'Backfill Pipeline {status.upper()}',
+                  'text': (
+                      f'Start Date: ${{ inputs.start_date }}\n'
+                      f'End Date: ${{ inputs.end_date || \"today\" }}\n'
+                      f'Series: ${{ inputs.series || \"all\" }}\n'
+                      f'Run: ${{ github.run_id }}\n'
+                      f'Time: {datetime.now().isoformat()}'
+                  ),
+                  'actions': [{
+                      'type': 'button',
+                      'text': 'View Run',
+                      'url': '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+                  }]
+              }]
+          }
+
+          requests.post('${{ env.SLACK_WEBHOOK_URL }}', json=message)
+          "
+
+      # Add summary of backfill execution to GitHub Actions summary
+      - name: Add job summary
+        if: always()
+        run: |
+          echo "## Backfill Pipeline Execution Summary" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Start Date:** ${{ inputs.start_date }}" >> $GITHUB_STEP_SUMMARY
+          echo "**End Date:** ${{ inputs.end_date || 'today' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Series:** ${{ inputs.series || 'all' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Run ID:** ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
