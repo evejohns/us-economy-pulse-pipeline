@@ -1,0 +1,86 @@
+
+# Project Configuration for US Economy Pulse
+name: 'us_economy_pulse'
+version: '1.0.0'
+config-version: 2
+profile: 'us_economy_pulse'
+
+model-paths: ["models"]
+analysis-paths: ["analysis"]
+test-paths: ["tests"]
+data-paths: ["data"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  us_economy_pulse:
+    # Staging models: views that clean and standardize raw data
+    staging:
+      materialized: view
+      schema: staging
+      +pre-hook: "{{ log('Running staging model: ' ~ this.name, info=true) }}"
+
+    # Intermediate models: tables with transformations and business logic
+    intermediate:
+      materialized: table
+      schema: intermediate
+      +pre-hook: "{{ log('Running intermediate model: ' ~ this.name, info=true) }}"
+
+    # Mart/fact tables: final denormalized fact and dimension tables
+    marts:
+      materialized: table
+      schema: analytics
+      +pre-hook: "{{ log('Running mart model: ' ~ this.name, info=true) }}"
+      # Apply error-level severity to all mart tests
+      +tests:
+        - dbt_expectations.expect_column_values_to_not_be_null
+
+# Test configurations
+tests:
+  us_economy_pulse:
+    # Store failures for all tests
+    +store_failures: true
+    # Set severity for mart tests to error
+    marts:
+      +severity: error
+
+# Package configuration
+packages:
+  - package: dbt-labs/dbt_utils
+    version: "1.1.1"
+  - package: calogica/dbt_expectations
+    version: "0.8.0"
+
+# Require dbt version
+require-dbt-version: [">=1.5.0", "<2.0.0"]
+
+# Variable configurations
+vars:
+  # Data freshness thresholds
+  gdp_freshness_warn_days: 35
+  gdp_freshness_error_days: 60
+  cpi_freshness_warn_days: 10
+  cpi_freshness_error_days: 20
+  unemployment_freshness_warn_days: 8
+  unemployment_freshness_error_days: 15
+  fedfunds_freshness_warn_days: 5
+  fedfunds_freshness_error_days: 15
+  sentiment_freshness_warn_days: 10
+  sentiment_freshness_error_days: 20
+  housing_freshness_warn_days: 12
+  housing_freshness_error_days: 25
+
+  # Indicators configuration
+  rolling_avg_periods: [3, 6, 12]
+
+  # Recession analysis thresholds
+  consecutive_negative_quarters_threshold: 2
+
+  # Inflation severity thresholds (percent)
+  inflation_mild_threshold: 2.5
+  inflation_moderate_threshold: 4.0
+  inflation_high_threshold: 5.0

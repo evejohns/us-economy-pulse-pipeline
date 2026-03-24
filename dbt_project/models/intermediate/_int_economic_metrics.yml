@@ -1,0 +1,345 @@
+version: 2
+
+models:
+  - name: int_gdp_with_yoy_change
+    description: |
+      Intermediate GDP model with growth calculations.
+      Includes QoQ and YoY growth percentages plus flags for negative growth periods.
+    columns:
+      - name: period_date_key
+        description: Date key for joining
+        data_tests:
+          - not_null
+          - unique
+
+      - name: gdp_billions_usd
+        description: GDP value in billions of chained 2012 USD
+        data_tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: qoq_growth_pct
+        description: Quarter-over-quarter percentage growth
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: yoy_growth_pct
+        description: Year-over-year percentage growth
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: is_qoq_negative_growth
+        description: Flag indicating negative quarter-over-quarter growth
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+      - name: is_yoy_negative_growth
+        description: Flag indicating negative year-over-year growth
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+  - name: int_cpi_inflation_rates
+    description: |
+      Intermediate CPI model with calculated inflation rates.
+      Includes YoY inflation, MoM changes, rolling averages, and severity categorization.
+    columns:
+      - name: period_date_key
+        description: Date key for joining
+        data_tests:
+          - not_null
+          - unique
+
+      - name: cpi_index
+        description: CPI index value (1982-1984 = 100)
+        data_tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: yoy_inflation_rate_pct
+        description: Year-over-year inflation rate as percentage
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: mom_change_pct
+        description: Month-over-month percentage change
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: rolling_3m_inflation_pct
+        description: 3-month rolling inflation rate
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: inflation_severity_category
+        description: Categorized inflation level (Mild, Moderate, High, Severe)
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['Mild', 'Moderate', 'High', 'Severe']
+
+  - name: int_labor_market_metrics
+    description: |
+      Intermediate labor market model with unemployment changes and health metrics.
+      Includes YoY changes, rolling averages, trend direction, and health flags.
+    columns:
+      - name: period_date_key
+        description: Date key for joining
+        data_tests:
+          - not_null
+          - unique
+
+      - name: unemployment_rate_pct
+        description: Unemployment rate as percentage
+        data_tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: yoy_change_pct
+        description: Year-over-year change in unemployment rate
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: mom_change_pct
+        description: Month-over-month change in unemployment rate
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: rolling_3m_avg_pct
+        description: 3-month rolling average unemployment rate
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: trend_direction
+        description: Current unemployment trend (Rising, Declining, Flat)
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['Rising', 'Declining', 'Flat']
+
+      - name: is_labor_market_healthy
+        description: Flag indicating healthy labor market conditions
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+  - name: int_financial_conditions
+    description: |
+      Intermediate financial conditions model combining Federal Funds Rate and Consumer Sentiment.
+      Tracks rate direction and sentiment outlook with financial stress indicators.
+    columns:
+      - name: period_date_key
+        description: Date key for joining
+        data_tests:
+          - not_null
+
+      - name: fedfunds_rate_pct
+        description: Federal Funds rate as percentage
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: rate_change_bps
+        description: Federal Funds rate change in basis points
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: rate_direction
+        description: Direction of rate movement (Rising, Falling, Flat)
+        data_tests:
+          - accepted_values:
+              values: ['Rising', 'Falling', 'Flat']
+
+      - name: sentiment_index
+        description: Consumer sentiment index value
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: sentiment_yoy_change_pct
+        description: Year-over-year sentiment change
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: sentiment_outlook
+        description: Sentiment classification (Optimistic, Pessimistic, Neutral)
+        data_tests:
+          - accepted_values:
+              values: ['Optimistic', 'Pessimistic', 'Neutral']
+
+      - name: is_financial_stress_elevated
+        description: Flag indicating elevated financial stress
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+  - name: int_economic_rolling_averages
+    description: |
+      Rolling averages for all monthly economic indicators (3M, 6M, 12M windows).
+      Unified view of smoothed indicator trends across all major metrics.
+    columns:
+      - name: period_date_key
+        description: Date key for joining
+        data_tests:
+          - not_null
+
+      - name: indicator_type
+        description: Type of economic indicator
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['CPI', 'Unemployment Rate', 'Federal Funds Rate', 'Consumer Sentiment', 'Housing Starts']
+
+      - name: rolling_3m_avg
+        description: 3-month rolling average value
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: rolling_6m_avg
+        description: 6-month rolling average value
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: rolling_12m_avg
+        description: 12-month rolling average value
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: metric_category
+        description: Category of metric (Inflation, Labor Market, etc.)
+        data_tests:
+          - not_null
+
+  - name: int_recession_indicators
+    description: |
+      Comprehensive recession analysis combining GDP, unemployment, inflation, and sentiment.
+      Provides recession risk levels and intensity scores based on multiple indicators.
+    columns:
+      - name: period_date_key
+        description: Date key for analysis
+        data_tests:
+          - not_null
+          - unique
+
+      - name: gdp_billions_usd
+        description: Real GDP in billions of chained 2012 USD
+        data_tests:
+          - not_null
+
+      - name: qoq_growth_pct
+        description: Quarter-over-quarter GDP growth percentage
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: unemployment_rate_pct
+        description: Current unemployment rate
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: yoy_inflation_rate_pct
+        description: Year-over-year inflation rate
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: consecutive_negative_quarters
+        description: Count of consecutive quarters with negative GDP growth
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['integer', 'numeric', 'bigint']
+
+      - name: recession_risk_level
+        description: Assessed recession risk (Low, Emerging, Moderate, High)
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['Low', 'Emerging', 'Moderate', 'High']
+
+      - name: recession_intensity_score
+        description: Composite recession intensity score (0-15 scale)
+        data_tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 15
+
+  - name: int_indicator_cross_correlations
+    description: |
+      Cross-correlations between key economic indicators using 12-quarter rolling windows.
+      Measures relationship strength between GDP/unemployment, inflation/rates, and sentiment pairs.
+    columns:
+      - name: period_date_key
+        description: Date key for correlations
+        data_tests:
+          - not_null
+          - unique
+
+      - name: gdp_vs_unemployment_corr
+        description: Correlation between GDP and unemployment (-1 to 1)
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: -1
+              max_value: 1
+
+      - name: inflation_vs_fedfunds_corr
+        description: Correlation between inflation and Federal Funds rate (-1 to 1)
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: -1
+              max_value: 1
+
+      - name: gdp_vs_sentiment_corr
+        description: Correlation between GDP and consumer sentiment (-1 to 1)
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: -1
+              max_value: 1
+
+      - name: unemployment_vs_sentiment_corr
+        description: Correlation between unemployment and sentiment (-1 to 1)
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: -1
+              max_value: 1
+
+      - name: inflation_vs_sentiment_corr
+        description: Correlation between inflation and sentiment (-1 to 1)
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: -1
+              max_value: 1
+
+      - name: gdp_unemployment_relationship
+        description: Assessment of GDP-unemployment relationship strength
+        data_tests:
+          - accepted_values:
+              values: ['Strong Inverse', 'Moderate Inverse', 'Weak', 'Positive']
+
+      - name: inflation_fedfunds_relationship
+        description: Assessment of inflation-rates relationship strength
+        data_tests:
+          - accepted_values:
+              values: ['Strong Positive', 'Moderate Positive', 'Weak']

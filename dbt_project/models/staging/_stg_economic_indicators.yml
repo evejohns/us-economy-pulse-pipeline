@@ -1,0 +1,410 @@
+version: 2
+
+models:
+  - name: stg_gdp
+    description: |
+      Cleaned and standardized Real GDP data from FRED.
+      Quarterly frequency, representing the inflation-adjusted total economic output.
+    columns:
+      - name: period_date
+        description: The date of the observation
+        data_tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_of_type:
+              column_type: date
+
+      - name: period_date_key
+        description: Period date cast to date type for joins
+        data_tests:
+          - not_null
+
+      - name: series_code
+        description: FRED series identifier
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['GDPC1']
+
+      - name: gdp_billions_usd
+        description: GDP value in billions of chained 2012 US dollars
+        data_tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+          - test_valid_economic_range:
+              min_value: 0
+              max_value: 30000
+
+      - name: data_source
+        description: Source of the data (FRED)
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['FRED']
+
+      - name: indicator_type
+        description: Type/category of economic indicator
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['Economic Output']
+
+      - name: indicator_name
+        description: Standardized indicator name
+        data_tests:
+          - not_null
+
+      - name: loaded_at
+        description: When data was ingested from source
+        data_tests:
+          - not_null
+
+      - name: is_latest
+        description: Flag indicating if this is the most recent record
+        data_tests:
+          - not_null
+
+      - name: dbt_loaded_at
+        description: When dbt processed this record
+        data_tests:
+          - not_null
+
+  - name: stg_cpi
+    description: |
+      Cleaned and standardized Consumer Price Index data from FRED.
+      Monthly frequency, measuring inflation across goods and services.
+    columns:
+      - name: period_date
+        description: The date of the observation
+        data_tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_of_type:
+              column_type: date
+
+      - name: period_date_key
+        description: Period date cast to date type for joins
+        data_tests:
+          - not_null
+
+      - name: series_code
+        description: FRED series identifier
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['CPIAUCSL']
+
+      - name: cpi_index
+        description: CPI index value (1982-1984 = 100)
+        data_tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+          - test_valid_economic_range:
+              min_value: 50
+              max_value: 400
+
+      - name: data_source
+        description: Source of the data (FRED)
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['FRED']
+
+      - name: indicator_type
+        description: Type/category of economic indicator
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['Inflation']
+
+      - name: indicator_name
+        description: Standardized indicator name
+        data_tests:
+          - not_null
+
+      - name: loaded_at
+        description: When data was ingested from source
+        data_tests:
+          - not_null
+
+      - name: is_latest
+        description: Flag indicating if this is the most recent record
+        data_tests:
+          - not_null
+
+      - name: dbt_loaded_at
+        description: When dbt processed this record
+        data_tests:
+          - not_null
+
+  - name: stg_unemployment_rate
+    description: |
+      Cleaned and standardized Unemployment Rate data from FRED.
+      Monthly frequency, seasonally adjusted percentage of labor force unemployed.
+    columns:
+      - name: period_date
+        description: The date of the observation
+        data_tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_of_type:
+              column_type: date
+
+      - name: period_date_key
+        description: Period date cast to date type for joins
+        data_tests:
+          - not_null
+
+      - name: series_code
+        description: FRED series identifier
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['UNRATE']
+
+      - name: unemployment_rate_pct
+        description: Unemployment rate as a percentage
+        data_tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+          - test_valid_economic_range:
+              min_value: 2
+              max_value: 15
+
+      - name: data_source
+        description: Source of the data (FRED)
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['FRED']
+
+      - name: indicator_type
+        description: Type/category of economic indicator
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['Labor Market']
+
+      - name: indicator_name
+        description: Standardized indicator name
+        data_tests:
+          - not_null
+
+      - name: loaded_at
+        description: When data was ingested from source
+        data_tests:
+          - not_null
+
+      - name: is_latest
+        description: Flag indicating if this is the most recent record
+        data_tests:
+          - not_null
+
+      - name: dbt_loaded_at
+        description: When dbt processed this record
+        data_tests:
+          - not_null
+
+  - name: stg_federal_funds_rate
+    description: |
+      Cleaned and standardized Federal Funds Rate data from FRED.
+      Monthly frequency, representing the overnight bank lending rate.
+    columns:
+      - name: period_date
+        description: The date of the observation
+        data_tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_of_type:
+              column_type: date
+
+      - name: period_date_key
+        description: Period date cast to date type for joins
+        data_tests:
+          - not_null
+
+      - name: series_code
+        description: FRED series identifier
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['FEDFUNDS']
+
+      - name: fedfunds_rate_pct
+        description: Federal funds rate as a percentage
+        data_tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+          - test_valid_economic_range:
+              min_value: 0
+              max_value: 25
+
+      - name: data_source
+        description: Source of the data (FRED)
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['FRED']
+
+      - name: indicator_type
+        description: Type/category of economic indicator
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['Monetary Policy']
+
+      - name: indicator_name
+        description: Standardized indicator name
+        data_tests:
+          - not_null
+
+      - name: loaded_at
+        description: When data was ingested from source
+        data_tests:
+          - not_null
+
+      - name: is_latest
+        description: Flag indicating if this is the most recent record
+        data_tests:
+          - not_null
+
+      - name: dbt_loaded_at
+        description: When dbt processed this record
+        data_tests:
+          - not_null
+
+  - name: stg_consumer_sentiment
+    description: |
+      Cleaned and standardized Consumer Sentiment Index data from FRED.
+      Monthly frequency, measuring consumer confidence and economic expectations.
+    columns:
+      - name: period_date
+        description: The date of the observation
+        data_tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_of_type:
+              column_type: date
+
+      - name: period_date_key
+        description: Period date cast to date type for joins
+        data_tests:
+          - not_null
+
+      - name: series_code
+        description: FRED series identifier
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['UMCSENT']
+
+      - name: sentiment_index
+        description: Sentiment index value (1966 Q1 = 100)
+        data_tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+          - test_valid_economic_range:
+              min_value: 50
+              max_value: 150
+
+      - name: data_source
+        description: Source of the data (FRED)
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['FRED']
+
+      - name: indicator_type
+        description: Type/category of economic indicator
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['Consumer Confidence']
+
+      - name: indicator_name
+        description: Standardized indicator name
+        data_tests:
+          - not_null
+
+      - name: loaded_at
+        description: When data was ingested from source
+        data_tests:
+          - not_null
+
+      - name: is_latest
+        description: Flag indicating if this is the most recent record
+        data_tests:
+          - not_null
+
+      - name: dbt_loaded_at
+        description: When dbt processed this record
+        data_tests:
+          - not_null
+
+  - name: stg_housing_starts
+    description: |
+      Cleaned and standardized Housing Starts data from FRED.
+      Monthly frequency, representing new residential construction projects (seasonally adjusted).
+    columns:
+      - name: period_date
+        description: The date of the observation
+        data_tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_of_type:
+              column_type: date
+
+      - name: period_date_key
+        description: Period date cast to date type for joins
+        data_tests:
+          - not_null
+
+      - name: series_code
+        description: FRED series identifier
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['HOUST']
+
+      - name: housing_starts_thousands
+        description: Housing starts in thousands
+        data_tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+          - test_valid_economic_range:
+              min_value: 300
+              max_value: 3000
+
+      - name: data_source
+        description: Source of the data (FRED)
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['FRED']
+
+      - name: indicator_type
+        description: Type/category of economic indicator
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['Construction Activity']
+
+      - name: indicator_name
+        description: Standardized indicator name
+        data_tests:
+          - not_null
+
+      - name: loaded_at
+        description: When data was ingested from source
+        data_tests:
+          - not_null
+
+      - name: is_latest
+        description: Flag indicating if this is the most recent record
+        data_tests:
+          - not_null
+
+      - name: dbt_loaded_at
+        description: When dbt processed this record
+        data_tests:
+          - not_null

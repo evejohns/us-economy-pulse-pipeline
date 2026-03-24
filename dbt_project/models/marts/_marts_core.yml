@@ -1,0 +1,279 @@
+version: 2
+
+models:
+  - name: fct_economic_indicators_monthly
+    description: |
+      Monthly grain fact table containing all primary economic indicators.
+      One row per month with CPI, unemployment, Fed rates, sentiment, housing starts, and data quality metrics.
+    columns:
+      - name: period_date_key
+        description: The date key for the month (unique identifier)
+        data_tests:
+          - not_null
+          - unique
+
+      - name: year
+        description: Calendar year
+        data_tests:
+          - not_null
+
+      - name: month
+        description: Month of year (1-12)
+        data_tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 1
+              max_value: 12
+
+      - name: year_month
+        description: Year-month formatted as YYYY-MM
+        data_tests:
+          - not_null
+
+      - name: cpi_index
+        description: Consumer Price Index value (1982-1984 = 100)
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: yoy_inflation_rate_pct
+        description: Year-over-year inflation rate as percentage
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: inflation_severity_category
+        description: Categorized inflation level
+        data_tests:
+          - accepted_values:
+              values: ['Mild', 'Moderate', 'High', 'Severe']
+
+      - name: cpi_mom_change_pct
+        description: Month-over-month CPI change percentage
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: unemployment_rate_pct
+        description: Unemployment rate as percentage
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: unemployment_yoy_change_pct
+        description: Year-over-year change in unemployment rate
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: unemployment_trend
+        description: Current unemployment trend direction
+        data_tests:
+          - accepted_values:
+              values: ['Rising', 'Declining', 'Flat']
+
+      - name: is_labor_market_healthy
+        description: Flag indicating healthy labor market conditions
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+          - accepted_values:
+              values: [true, false]
+
+      - name: fedfunds_rate_pct
+        description: Federal Funds rate as percentage
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: fedfunds_direction
+        description: Direction of Federal Funds rate movement
+        data_tests:
+          - accepted_values:
+              values: ['Rising', 'Falling', 'Flat']
+
+      - name: sentiment_index
+        description: Consumer sentiment index value
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: sentiment_outlook
+        description: Consumer sentiment classification
+        data_tests:
+          - accepted_values:
+              values: ['Optimistic', 'Pessimistic', 'Neutral']
+
+      - name: housing_starts_thousands
+        description: Housing starts in thousands
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: data_completeness_score
+        description: Count of non-null indicator values (0-5 scale)
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 5
+
+      - name: is_data_complete
+        description: Flag indicating data completeness (4 or more indicators present)
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+      - name: dbt_loaded_at
+        description: Timestamp when dbt processed this record
+        data_tests:
+          - not_null
+
+  - name: fct_economic_indicators_quarterly
+    description: |
+      Quarterly grain fact table with GDP metrics and averaged monthly indicators.
+      One row per quarter with growth rates, recession signals, and cross-sectional metrics.
+    columns:
+      - name: period_date_key
+        description: The date key for the quarter
+        data_tests:
+          - not_null
+          - unique
+
+      - name: year
+        description: Calendar year
+        data_tests:
+          - not_null
+
+      - name: quarter
+        description: Quarter of year (1-4)
+        data_tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 1
+              max_value: 4
+
+      - name: year_quarter
+        description: Year-quarter formatted as YYYY-QN
+        data_tests:
+          - not_null
+
+      - name: gdp_billions_usd
+        description: Real GDP in billions of chained 2012 USD
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: qoq_growth_pct
+        description: Quarter-over-quarter GDP growth percentage
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: yoy_growth_pct
+        description: Year-over-year GDP growth percentage
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: is_qoq_negative_growth
+        description: Flag for negative quarter-over-quarter growth
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+          - accepted_values:
+              values: [true, false]
+
+      - name: recession_risk_level
+        description: Assessed recession risk category
+        data_tests:
+          - accepted_values:
+              values: ['Low', 'Emerging', 'Moderate', 'High']
+
+      - name: recession_intensity_score
+        description: Composite recession intensity (0-15)
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 15
+
+      - name: dbt_loaded_at
+        description: Timestamp when dbt processed this record
+        data_tests:
+          - not_null
+
+  - name: dim_economic_periods
+    description: |
+      Dimension table for economic time periods with calendar attributes and NBER recession dates.
+      One row per month with year, quarter, month dimensions and recession period indicators.
+    columns:
+      - name: period_date
+        description: The date representing the month
+        data_tests:
+          - not_null
+          - unique
+
+      - name: year
+        description: Calendar year
+        data_tests:
+          - not_null
+
+      - name: quarter
+        description: Quarter of year (1-4)
+        data_tests:
+          - not_null
+
+      - name: month
+        description: Month of year (1-12)
+        data_tests:
+          - not_null
+
+      - name: month_name
+        description: Full month name
+        data_tests:
+          - not_null
+
+      - name: month_short
+        description: Abbreviated month name (3 chars)
+        data_tests:
+          - not_null
+
+      - name: year_quarter
+        description: Year-quarter formatted as YYYY-QN
+        data_tests:
+          - not_null
+
+      - name: year_month
+        description: Year-month formatted as YYYY-MM
+        data_tests:
+          - not_null
+
+      - name: quarter_name
+        description: Quarter name (Q1-Q4)
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['Q1', 'Q2', 'Q3', 'Q4']
+
+      - name: is_nber_recession_period
+        description: Flag indicating NBER official recession period
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+      - name: recession_name
+        description: Name of recession if applicable
+        data_tests:
+          - accepted_values:
+              values: ['2001 Recession', '2007-2009 Financial Crisis', '2020 COVID Recession']
+
+      - name: dbt_loaded_at
+        description: Timestamp when dbt processed this record
+        data_tests:
+          - not_null

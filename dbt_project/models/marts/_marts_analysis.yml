@@ -1,0 +1,379 @@
+version: 2
+
+models:
+  - name: fct_recession_analysis
+    description: |
+      Quarterly grain fact table focused on recession analysis and risk assessment.
+      Includes risk levels, intensity scores, and a summary of contributing factors.
+    columns:
+      - name: period_date_key
+        description: The date key for the quarter
+        data_tests:
+          - not_null
+          - unique
+
+      - name: year
+        description: Calendar year
+        data_tests:
+          - not_null
+
+      - name: quarter
+        description: Quarter of year (1-4)
+        data_tests:
+          - not_null
+
+      - name: year_quarter
+        description: Year-quarter formatted as YYYY-QN
+        data_tests:
+          - not_null
+
+      - name: gdp_billions_usd
+        description: Real GDP in billions of chained 2012 USD
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: qoq_growth_pct
+        description: Quarter-over-quarter GDP growth percentage
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: unemployment_rate_pct
+        description: Average unemployment rate for quarter
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: yoy_inflation_rate_pct
+        description: Year-over-year inflation rate
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: sentiment_index
+        description: Average consumer sentiment index
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: recession_risk_level
+        description: Assessed recession risk category
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['Low', 'Emerging', 'Moderate', 'High']
+
+      - name: recession_intensity_score
+        description: Composite recession intensity score (0-15)
+        data_tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 15
+
+      - name: consecutive_negative_quarters
+        description: Count of consecutive quarters with negative GDP growth
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['integer', 'numeric', 'bigint']
+
+      - name: recession_contributing_factors
+        description: Comma-separated list of factors contributing to recession risk
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_of_type:
+              column_type: text
+
+      - name: num_contributing_factors
+        description: Count of contributing recession risk factors (0-4)
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 4
+
+      - name: risk_assessment_summary
+        description: Human-readable recession risk assessment
+        data_tests:
+          - not_null
+
+      - name: dbt_loaded_at
+        description: Timestamp when dbt processed this record
+        data_tests:
+          - not_null
+
+  - name: fct_inflation_analysis
+    description: |
+      Monthly grain fact table focused on inflation analysis and monetary policy response.
+      Tracks inflation severity, Fed policy stance, and policy effectiveness.
+    columns:
+      - name: period_date_key
+        description: The date key for the month
+        data_tests:
+          - not_null
+          - unique
+
+      - name: year
+        description: Calendar year
+        data_tests:
+          - not_null
+
+      - name: month
+        description: Month of year (1-12)
+        data_tests:
+          - not_null
+
+      - name: year_month
+        description: Year-month formatted as YYYY-MM
+        data_tests:
+          - not_null
+
+      - name: cpi_index
+        description: Consumer Price Index value
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: yoy_inflation_rate_pct
+        description: Year-over-year inflation rate as percentage
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: mom_inflation_change_pct
+        description: Month-over-month change in inflation rate
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: inflation_severity_category
+        description: Categorized inflation level
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+          - accepted_values:
+              values: ['Mild', 'Moderate', 'High', 'Severe']
+
+      - name: inflation_momentum
+        description: Inflation trend direction
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['Accelerating', 'Decelerating', 'Stable']
+
+      - name: fedfunds_rate_pct
+        description: Federal Funds rate as percentage
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: fedfunds_direction
+        description: Direction of Fed rate movement
+        data_tests:
+          - accepted_values:
+              values: ['Rising', 'Falling', 'Flat']
+
+      - name: fed_policy_stance_to_inflation
+        description: Fed policy stance relative to inflation environment
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['Tightening Response', 'Accommodative Despite Inflation', 'Restrictive', 'Neutral', 'Accommodative']
+
+      - name: fed_policy_effectiveness
+        description: Assessment of Fed policy effectiveness
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['Effective', 'Insufficient', 'Permissive', 'Neutral']
+
+      - name: dbt_loaded_at
+        description: Timestamp when dbt processed this record
+        data_tests:
+          - not_null
+
+  - name: fct_employment_analysis
+    description: |
+      Monthly grain fact table focused on labor market and employment analysis.
+      Includes unemployment trends, housing leading indicators, and labor market health scores.
+    columns:
+      - name: period_date_key
+        description: The date key for the month
+        data_tests:
+          - not_null
+          - unique
+
+      - name: year
+        description: Calendar year
+        data_tests:
+          - not_null
+
+      - name: month
+        description: Month of year (1-12)
+        data_tests:
+          - not_null
+
+      - name: year_month
+        description: Year-month formatted as YYYY-MM
+        data_tests:
+          - not_null
+
+      - name: unemployment_rate_pct
+        description: Unemployment rate as percentage
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: unemployment_yoy_change_pct
+        description: Year-over-year change in unemployment rate
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: unemployment_trend
+        description: Current unemployment trend direction
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+          - accepted_values:
+              values: ['Rising', 'Declining', 'Flat']
+
+      - name: is_labor_market_healthy
+        description: Flag indicating healthy labor market conditions
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+          - accepted_values:
+              values: [true, false]
+
+      - name: housing_starts_thousands
+        description: Housing starts in thousands
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: housing_starts_6m_change_pct
+        description: 6-month percentage change in housing starts
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_in_type_list:
+              column_type_list: ['numeric']
+
+      - name: housing_leading_indicator
+        description: Housing starts trend as leading indicator
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['Positive', 'Negative', 'Flat']
+
+      - name: labor_market_health_score
+        description: Composite health score for labor market (0-10)
+        data_tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 10
+
+      - name: labor_market_condition
+        description: Assessment of current labor market condition
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['Excellent', 'Good', 'Fair', 'Weak']
+
+      - name: employment_assessment
+        description: Overall employment and labor market assessment
+        data_tests:
+          - not_null
+
+      - name: dbt_loaded_at
+        description: Timestamp when dbt processed this record
+        data_tests:
+          - not_null
+
+  - name: vw_economic_overview_dashboard
+    description: |
+      Wide denormalized view combining latest economic metrics for dashboard display.
+      Contains the most recent monthly, quarterly, and recession analysis data in a single row.
+    columns:
+      - name: latest_month
+        description: The latest month date key available in the data
+
+      - name: year_month
+        description: Latest month formatted as YYYY-MM
+
+      - name: cpi_index
+        description: Latest CPI index value
+
+      - name: yoy_inflation_rate_pct
+        description: Latest year-over-year inflation rate
+
+      - name: inflation_severity_category
+        description: Latest inflation severity category
+
+      - name: unemployment_rate_pct
+        description: Latest unemployment rate
+
+      - name: unemployment_yoy_change_pct
+        description: Latest year-over-year unemployment change
+
+      - name: unemployment_trend
+        description: Latest unemployment trend direction
+
+      - name: fedfunds_rate_pct
+        description: Latest Federal Funds rate
+
+      - name: fedfunds_direction
+        description: Latest Federal Funds rate direction
+
+      - name: sentiment_index
+        description: Latest consumer sentiment index
+
+      - name: sentiment_outlook
+        description: Latest sentiment outlook
+
+      - name: housing_starts_thousands
+        description: Latest housing starts
+
+      - name: is_labor_market_healthy
+        description: Flag for current labor market health
+
+      - name: gdp_billions_usd
+        description: Latest quarter GDP value
+
+      - name: qoq_growth_pct
+        description: Latest quarter-over-quarter GDP growth
+
+      - name: yoy_growth_pct
+        description: Latest year-over-year GDP growth
+
+      - name: recession_risk_level
+        description: Current recession risk assessment
+
+      - name: recession_intensity_score
+        description: Current recession intensity score
+
+      - name: recession_contributing_factors
+        description: Current recession contributing factors
+
+      - name: risk_assessment_summary
+        description: Human-readable risk assessment summary
+
+      - name: is_nber_recession_period
+        description: Flag indicating NBER official recession period
+
+      - name: data_completeness_score
+        description: Data completeness for latest month
+
+      - name: is_data_complete
+        description: Flag indicating data is complete
+
+      - name: dbt_loaded_at
+        description: Timestamp when data was last processed

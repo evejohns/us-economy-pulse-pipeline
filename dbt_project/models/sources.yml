@@ -1,0 +1,145 @@
+version: 2
+
+sources:
+  - name: fred_raw
+    description: |
+      Raw data ingested from the Federal Reserve Economic Data (FRED) API.
+      Data is loaded by the Ingestor component and represents official US economic indicators.
+    database: null  # Uses default dbt database
+    schema: public
+    meta:
+      owner: data-ingestor
+      refresh_frequency: scheduled
+
+    tables:
+      - name: raw_gdp
+        description: |
+          Real Gross Domestic Product (Quarterly). FRED series GDPC1.
+          Represents the inflation-adjusted total economic output of the US.
+        columns:
+          - name: observation_date
+            description: The date of the observation (quarterly, e.g., first day of quarter)
+            data_type: date
+          - name: series_id
+            description: FRED series identifier (GDPC1)
+            data_type: varchar
+          - name: value
+            description: GDP value in billions of chained 2012 US dollars
+            data_type: numeric
+          - name: ingested_at
+            description: Timestamp when data was ingested
+            data_type: timestamp with time zone
+        freshness:
+          warn_after: { count: 35, period: day }
+          error_after: { count: 60, period: day }
+        loaded_at_field: ingested_at
+
+      - name: raw_cpi
+        description: |
+          Consumer Price Index - All Urban Consumers (Monthly). FRED series CPIAUCSL.
+          Measures inflation across all goods and services purchased by consumers.
+        columns:
+          - name: observation_date
+            description: The date of the observation (monthly, first day of month)
+            data_type: date
+          - name: series_id
+            description: FRED series identifier (CPIAUCSL)
+            data_type: varchar
+          - name: value
+            description: CPI index value (1982-1984 = 100)
+            data_type: numeric
+          - name: ingested_at
+            description: Timestamp when data was ingested
+            data_type: timestamp with time zone
+        freshness:
+          warn_after: { count: 10, period: day }
+          error_after: { count: 20, period: day }
+        loaded_at_field: ingested_at
+
+      - name: raw_unemployment
+        description: |
+          Unemployment Rate (Monthly). FRED series UNRATE.
+          Percentage of the labor force that is unemployed, seasonally adjusted.
+        columns:
+          - name: observation_date
+            description: The date of the observation (monthly, first day of month)
+            data_type: date
+          - name: series_id
+            description: FRED series identifier (UNRATE)
+            data_type: varchar
+          - name: value
+            description: Unemployment rate as a percentage
+            data_type: numeric
+          - name: ingested_at
+            description: Timestamp when data was ingested
+            data_type: timestamp with time zone
+        freshness:
+          warn_after: { count: 8, period: day }
+          error_after: { count: 15, period: day }
+        loaded_at_field: ingested_at
+
+      - name: raw_federal_funds
+        description: |
+          Federal Funds Effective Rate (Monthly). FRED series FEDFUNDS.
+          The interest rate at which banks lend reserve balances to each other overnight.
+        columns:
+          - name: observation_date
+            description: The date of the observation (monthly, first day of month)
+            data_type: date
+          - name: series_id
+            description: FRED series identifier (FEDFUNDS)
+            data_type: varchar
+          - name: value
+            description: Federal funds rate as a percentage
+            data_type: numeric
+          - name: ingested_at
+            description: Timestamp when data was ingested
+            data_type: timestamp with time zone
+        freshness:
+          warn_after: { count: 5, period: day }
+          error_after: { count: 15, period: day }
+        loaded_at_field: ingested_at
+
+      - name: raw_consumer_sentiment
+        description: |
+          University of Michigan Consumer Sentiment Index (Monthly). FRED series UMCSENT.
+          Measures consumer confidence and economic expectations (1966 Q1 = 100).
+        columns:
+          - name: observation_date
+            description: The date of the observation (monthly, first day of month)
+            data_type: date
+          - name: series_id
+            description: FRED series identifier (UMCSENT)
+            data_type: varchar
+          - name: value
+            description: Sentiment index value
+            data_type: numeric
+          - name: ingested_at
+            description: Timestamp when data was ingested
+            data_type: timestamp with time zone
+        freshness:
+          warn_after: { count: 10, period: day }
+          error_after: { count: 20, period: day }
+        loaded_at_field: ingested_at
+
+      - name: raw_housing_starts
+        description: |
+          Housing Starts (Monthly). FRED series HOUST.
+          Number of new residential construction projects started (in thousands, seasonally adjusted).
+        columns:
+          - name: observation_date
+            description: The date of the observation (monthly, first day of month)
+            data_type: date
+          - name: series_id
+            description: FRED series identifier (HOUST)
+            data_type: varchar
+          - name: value
+            description: Housing starts in thousands
+            data_type: numeric
+          - name: ingested_at
+            description: Timestamp when data was ingested
+            data_type: timestamp with time zone
+        freshness:
+          warn_after: { count: 12, period: day }
+          error_after: { count: 25, period: day }
+        loaded_at_field: ingested_at

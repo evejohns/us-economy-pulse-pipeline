@@ -1,0 +1,4 @@
+requests==2.31.0
+supabase==2.4.1
+python-dotenv==1.0.0
+tenacity==8.2.3
