@@ -85,21 +85,21 @@ html, body, [class*="css"], .stApp {
 /* ── KPI cards ── */
 .kpi-row { display: grid; grid-template-columns: repeat(5,1fr); gap: 14px; margin-bottom: 6px; }
 .kpi-card {
-    background: #ffffff; border: 1px solid #e5ecf2;
-    border-radius: 14px; padding: 20px 18px 16px;
+    background: #ffffff;
+    border-radius: 16px; padding: 20px 18px 16px;
     position: relative; overflow: hidden;
-    transition: border-color .25s, box-shadow .25s;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    transition: transform .2s, box-shadow .2s;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
 }
-.kpi-card:hover { border-color: #4c9be8; box-shadow: 0 4px 12px rgba(76,155,232,0.15); }
+.kpi-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
 .kpi-card::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-    background: linear-gradient(90deg, #4c9be8, #818cf8); border-radius: 14px 14px 0 0;
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #4c9be8, #818cf8); border-radius: 16px 16px 0 0;
 }
-.kpi-card.c-green::before  { background: linear-gradient(90deg,#22c55e,#16a34a); }
-.kpi-card.c-yellow::before { background: linear-gradient(90deg,#eab308,#ca8a04); }
-.kpi-card.c-orange::before { background: linear-gradient(90deg,#f97316,#ea580c); }
-.kpi-card.c-red::before    { background: linear-gradient(90deg,#ef4444,#dc2626); }
+.kpi-card.c-green::before  { background: linear-gradient(90deg,#22c55e,#4ade80); }
+.kpi-card.c-yellow::before { background: linear-gradient(90deg,#eab308,#fbbf24); }
+.kpi-card.c-orange::before { background: linear-gradient(90deg,#f97316,#fb923c); }
+.kpi-card.c-red::before    { background: linear-gradient(90deg,#ef4444,#f87171); }
 .kpi-lbl {
     font-size: 0.62rem; font-weight: 700; color: #7a8fa0;
     text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 10px;
@@ -114,18 +114,14 @@ html, body, [class*="css"], .stApp {
 
 /* ── Economy Snapshot card ── */
 .snapshot {
-    background: #ffffff; border: 1px solid #e5ecf2;
-    border-radius: 16px; padding: 24px 28px; margin-bottom: 8px;
+    background: #f8fafc;
+    border-radius: 20px; padding: 28px 32px; margin-bottom: 8px;
     position: relative; overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-}
-.snapshot::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-    background: linear-gradient(90deg, #4c9be8 0%, #818cf8 50%, #4c9be8 100%);
+    box-shadow: 0 2px 20px rgba(0,0,0,0.05);
 }
 .snap-title {
-    font-size: 0.7rem; font-weight: 700; color: #7a8fa0;
-    text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 14px;
+    font-size: 0.65rem; font-weight: 700; color: #94afc4;
+    text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 14px;
     display: flex; align-items: center; gap: 8px;
 }
 .snap-status {
@@ -140,18 +136,20 @@ html, body, [class*="css"], .stApp {
 .snap-item { font-size: 0.82rem; color: #5a7a95; margin-bottom: 5px; padding-left: 12px; position: relative; }
 .snap-item::before { content: '·'; position: absolute; left: 0; color: #a5b4c1; }
 .snap-action {
-    margin-top: 16px; padding-top: 14px; border-top: 1px solid #e5ecf2;
+    margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(0,0,0,0.06);
     font-size: 0.82rem; color: #5a7a95; line-height: 1.6;
 }
 .snap-action strong { color: #2c5a9a; font-weight: 600; }
 
 /* ── Section headers ── */
-.sec-hdr { display: flex; align-items: center; gap: 10px; margin: 8px 0 4px 0; }
-.sec-bar { width: 3px; height: 18px; border-radius: 2px; flex-shrink: 0; background: linear-gradient(180deg,#4c9be8,#818cf8); }
-.sec-txt { font-size: 1.05rem; font-weight: 600; color: #0f172a; letter-spacing: -0.01em; }
+.sec-hdr { display: flex; align-items: baseline; gap: 0; margin: 8px 0 4px 0; }
+.sec-bar { display: none; }
+.sec-txt {
+    font-size: 1.05rem; font-weight: 700; color: #0f172a; letter-spacing: -0.02em;
+}
 
 /* ── Divider ── */
-.sec-div { height: 1px; background: linear-gradient(to right,#e5ecf2,transparent); margin: 24px 0; }
+.sec-div { height: 1px; background: linear-gradient(to right, rgba(0,0,0,0.07), transparent); margin: 20px 0; }
 
 footer, #MainMenu, header { visibility: hidden !important; }
 </style>
