@@ -29,7 +29,7 @@ st.markdown("""
 html, body, [class*="css"], .stApp {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
 }
-.block-container { padding-top: 0 !important; padding-bottom: 3rem !important; max-width: 1400px !important; }
+.block-container { padding-top: 0 !important; padding-bottom: 3rem !important; max-width: 1400px !important; overflow-x: hidden !important; }
 
 /* ── Hero banner ── */
 .hero {
@@ -150,6 +150,39 @@ html, body, [class*="css"], .stApp {
 
 /* ── Divider ── */
 .sec-div { height: 1px; background: linear-gradient(to right, rgba(0,0,0,0.07), transparent); margin: 20px 0; }
+
+/* ── Tablet (≤ 900px) ── */
+@media (max-width: 900px) {
+    .block-container { padding-left: 1.5rem !important; padding-right: 1.5rem !important; }
+    .hero { margin: 0 -1.5rem 1.5rem -1.5rem; padding: 32px 20px 24px; }
+    .hero-title { font-size: 2.2rem; }
+    .kpi-row { grid-template-columns: repeat(3, 1fr); gap: 12px; }
+}
+
+/* ── Mobile (≤ 600px) ── */
+@media (max-width: 600px) {
+    .block-container { padding-left: 1rem !important; padding-right: 1rem !important; }
+    .hero { margin: 0 -1rem 1.2rem -1rem; padding: 28px 16px 22px; }
+    .hero-title { font-size: 1.75rem; letter-spacing: -0.02em; }
+    .hero-sub { font-size: 0.88rem; }
+    .kpi-row { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .kpi-val { font-size: 1.8rem; }
+    .kpi-lbl { font-size: 0.65rem; }
+    .snapshot { padding: 20px 18px; }
+    .snap-cols { grid-template-columns: 1fr; gap: 12px; }
+    .snap-status { font-size: 1rem; }
+    .snap-action { font-size: 0.88rem; }
+    .sec-txt { font-size: 1.1rem; }
+    .period-note { margin-bottom: 16px; }
+}
+
+/* ── Small phone (≤ 400px) ── */
+@media (max-width: 400px) {
+    .hero-title { font-size: 1.5rem; }
+    .kpi-row { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .kpi-card { padding: 16px 14px 12px; }
+    .kpi-val { font-size: 1.6rem; }
+}
 
 footer, #MainMenu, header { visibility: hidden !important; }
 </style>
