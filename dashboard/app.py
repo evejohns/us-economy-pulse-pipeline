@@ -398,8 +398,19 @@ fed_dir     = str(ov.get("fedfunds_direction", ""))
 _rmap       = {"Low":"c-green","Emerging":"c-yellow","Moderate":"c-orange","High":"c-red"}
 risk_cls    = _rmap.get(risk, "")
 
+# GDP QoQ — fall back to latest non-null value in the recession table
+# if the overview view returns null (happens when monthly data is ahead of GDP releases)
+_gdp_qoq = ov.get("qoq_growth_pct")
+if _gdp_qoq is None or (hasattr(_gdp_qoq, '__class__') and str(_gdp_qoq) in ('nan', 'None', '')):
+    try:
+        _rec_gdp = rec.dropna(subset=["qoq_growth_pct"])
+        if not _rec_gdp.empty:
+            _gdp_qoq = _rec_gdp["qoq_growth_pct"].iloc[-1]
+    except Exception:
+        pass
+
 try:
-    _gdp_cls = "" if float(ov.get("qoq_growth_pct", 0) or 0) >= 0 else "c-red"
+    _gdp_cls = "" if float(_gdp_qoq or 0) >= 0 else "c-red"
 except: _gdp_cls = ""
 try:
     _uchg = float(ov.get("unemployment_yoy_change_pct", 0) or 0)
@@ -417,8 +428,8 @@ st.markdown(f"""
 <div class="kpi-row">
   <div class="kpi-card {_gdp_cls}">
     <div class="kpi-lbl">Real GDP Growth (QoQ)</div>
-    <div class="kpi-val">{_pct(ov.get("qoq_growth_pct"))}</div>
-    {_dl(ov.get("qoq_growth_pct"))}
+    <div class="kpi-val">{_pct(_gdp_qoq)}</div>
+    {_dl(_gdp_qoq)}
   </div>
   <div class="kpi-card">
     <div class="kpi-lbl">Inflation (YoY)</div>
@@ -453,9 +464,9 @@ def _build_snapshot(ov, rec, infl):
     score     = ov.get("recession_intensity_score", 1)
     positives, concerns, signals = [], [], []
 
-    # GDP
+    # GDP (use _gdp_qoq which falls back to recession table if overview is null)
     try:
-        g = float(ov.get("qoq_growth_pct", 0) or 0)
+        g = float(_gdp_qoq or 0)
         if g > 0.5:   positives.append(f"GDP is growing (+{g:.1f}% QoQ)")
         elif g > 0:   signals.append(f"GDP growth is modest but positive (+{g:.1f}% QoQ)")
         else:         concerns.append(f"GDP contracted this quarter ({g:.1f}% QoQ)")

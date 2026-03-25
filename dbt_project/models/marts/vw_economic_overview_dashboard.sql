@@ -17,6 +17,7 @@ latest_quarterly as (
     q.*,
     row_number() over (order by q.period_date_key desc) as rn
   from {{ ref('fct_economic_indicators_quarterly') }} q
+  where q.gdp_billions_usd is not null  -- exclude future quarters with no GDP yet
 ),
 
 latest_recession as (
