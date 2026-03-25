@@ -3,9 +3,14 @@
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue)](https://www.python.org/downloads/release/python-3110/)
 [![dbt 1.5+](https://img.shields.io/badge/dbt-1.5%2B-orange)](https://www.getdbt.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Pipeline Status](https://img.shields.io/badge/Status-Active-brightgreen)
+[![Pipeline Status](https://img.shields.io/badge/Status-Active-brightgreen)](https://github.com)
+[![Live Dashboard](https://img.shields.io/badge/Live%20Dashboard-Streamlit-ff4b4b?logo=streamlit)](https://us-economy-pulse-pipeline-b3qs5emwiyydwtlvav4aeg.streamlit.app/)
 
 A production-grade data pipeline that ingests, transforms, and monitors six critical US economic indicators from the Federal Reserve Economic Data (FRED) API, delivering clean, analysis-ready data for economic research and forecasting.
+
+**[→ View the live dashboard](https://us-economy-pulse-pipeline-b3qs5emwiyydwtlvav4aeg.streamlit.app/)**
+
+![Dashboard screenshot](docs/screenshots/dashboard.png)
 
 ## Architecture
 
@@ -105,6 +110,7 @@ This portfolio project showcases end-to-end data engineering capabilities:
 | **Quality** | Python (custom) | Anomaly detection, freshness validation |
 | **Alerts** | Slack Webhooks | Real-time issue notifications |
 | **Orchestration** | GitHub Actions | Free, built-in CI/CD for scheduled runs |
+| **Dashboard** | Streamlit Cloud | Live public dashboard, auto-deploys from GitHub |
 | **Version Control** | Git / GitHub | Source of truth for code and schema |
 
 ## dbt Model Inventory
@@ -145,7 +151,7 @@ Denormalized fact tables and dashboard-ready views for analysis and BI tools.
 | fct_inflation_analysis | CPI and inflation focus | One row per month | Inflation tracking |
 | fct_recession_analysis | Recession probability scores | One row per quarter | Macro forecasting |
 | dim_economic_periods | Calendar + regime dimensions | One row per date | Conformed dimensions |
-| vw_economic_overview_dashboard | Pre-joined view for BI | One row per month | Metabase dashboards |
+| vw_economic_overview_dashboard | Pre-joined view for BI | One row per month | Streamlit dashboard (live) |
 
 ## Quick Start
 
@@ -330,30 +336,31 @@ The pipeline is idempotent: re-running it with the same data produces no duplica
 
 ## Viewing Results
 
-### Supabase Studio (Free, Built-in)
-1. Log into https://supabase.com
-2. Select your project
-3. Navigate to Database → Tables
-4. Browse `analytics.fct_economic_indicators_monthly`, `analytics.fct_employment_analysis`, etc.
-5. Query tables via SQL editor: Table → SQL Editor
+### Live Dashboard (Streamlit Cloud)
+The dashboard is publicly deployed and updates automatically whenever the pipeline runs.
 
-### Metabase (Optional, Free)
-```bash
-# Start Metabase locally
-docker run -p 3000:3000 metabase/metabase
+**[→ https://us-economy-pulse-pipeline-b3qs5emwiyydwtlvav4aeg.streamlit.app/](https://us-economy-pulse-pipeline-b3qs5emwiyydwtlvav4aeg.streamlit.app/)**
 
-# Point to Supabase in Admin → Databases
-# Create cards from vw_economic_overview_dashboard
-# Build dashboards for stakeholders
-```
+It displays KPI cards (GDP growth, inflation, unemployment, fed funds rate, recession risk), an interactive GDP chart, a color-coded recession risk timeline, inflation vs. monetary policy overlay, and a recession intensity score chart — all pulling live from Supabase.
 
-### dbt Documentation
+To deploy your own fork:
+1. Push the repo to GitHub
+2. Go to [share.streamlit.io](https://share.streamlit.io) and connect the repo
+3. Set `dashboard/app.py` as the entry point
+4. Add your Supabase credentials under **Secrets** in the Streamlit Cloud dashboard
+
+### Supabase Studio (Built-in SQL Explorer)
+1. Log into https://supabase.com and select your project
+2. Navigate to **Database → Tables** to browse the raw and analytics layers
+3. Use the **SQL Editor** to query views directly, e.g. `SELECT * FROM public_analytics.vw_economic_overview_dashboard`
+
+### dbt Documentation (Local)
 ```bash
 cd dbt_project
 dbt docs generate
-dbt docs serve
+dbt docs serve  # Opens at http://localhost:8080 — local only
 ```
-Opens interactive documentation at `http://localhost:8000` with model lineage, column definitions, and test history.
+Generates interactive model lineage, column definitions, and test history. Not deployed publicly.
 
 ## Contributing
 

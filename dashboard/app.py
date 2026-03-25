@@ -240,9 +240,10 @@ with col2:
     st.metric(
         "Inflation (YoY)",
         fmt_pct(ov.get("yoy_inflation_rate_pct")),
-        delta=str(ov.get("inflation_severity_category", "")),
-        delta_color="off",
     )
+    sev = ov.get("inflation_severity_category", "")
+    if sev:
+        st.caption(f"Severity: {sev}")
 
 with col3:
     st.metric(
@@ -256,9 +257,10 @@ with col4:
     st.metric(
         "Fed Funds Rate",
         fmt_pct(ov.get("fedfunds_rate_pct")),
-        delta=str(ov.get("fedfunds_direction", "")),
-        delta_color="off",
     )
+    direction = ov.get("fedfunds_direction", "")
+    if direction:
+        st.caption(f"Trend: {direction}")
 
 with col5:
     risk = ov.get("recession_risk_level", "Unknown")
@@ -266,45 +268,68 @@ with col5:
     st.metric(
         "Recession Risk",
         str(risk),
-        delta=f"Intensity score: {score}",
-        delta_color="off",
     )
+    st.caption(f"Intensity score: {score}")
+
+# Period context — clarify which quarter/month each figure comes from
+_q_period = rec["year_quarter"].iloc[-1] if not rec.empty else ""
+_m_period = infl["year_month"].iloc[-1] if not infl.empty else ""
+_parts = []
+if _q_period:
+    _parts.append(f"GDP & recession risk: {_q_period}")
+if _m_period:
+    _parts.append(f"inflation, employment & rates: {_m_period}")
+if _parts:
+    st.caption("Latest data — " + " · ".join(_parts))
 
 st.divider()
 
-# ── Row 1: GDP + Recession risk ─────────────────────────────────────────────────
-col_gdp, col_risk = st.columns([2, 1])
+# ── Row 1: GDP (full width) ─────────────────────────────────────────────────────
+st.subheader("GDP Growth — Quarter over Quarter")
+if not rec.empty:
+    colors = ["#ef4444" if v < 0 else "#4c9be8" for v in rec["qoq_growth_pct"].fillna(0)]
+    fig = go.Figure(go.Bar(
+        x=rec["year_quarter"],
+        y=rec["qoq_growth_pct"],
+        marker_color=colors,
+        hovertemplate="<b>%{x}</b><br>QoQ Growth: %{y:.2f}%<extra></extra>",
+    ))
+    fig.add_hline(y=0, line_color="#555", line_width=1)
+    apply_layout(fig, title="", height=320)
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
-with col_gdp:
-    st.subheader("GDP Growth — Quarter over Quarter")
-    if not rec.empty:
-        colors = ["#ef4444" if v < 0 else "#4c9be8" for v in rec["qoq_growth_pct"].fillna(0)]
-        fig = go.Figure(go.Bar(
-            x=rec["year_quarter"],
-            y=rec["qoq_growth_pct"],
-            marker_color=colors,
-            hovertemplate="<b>%{x}</b><br>QoQ Growth: %{y:.2f}%<extra></extra>",
-        ))
-        fig.add_hline(y=0, line_color="#555", line_width=1)
-        apply_layout(fig, title="", height=320)
-        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+# ── Row 1b: Recession Risk timeline strip ───────────────────────────────────────
+st.subheader("Recession Risk — Quarter by Quarter")
+if not rec.empty:
+    bar_colors = rec["recession_risk_level"].map(RISK_COLORS).fillna("#8b9ab3")
 
-with col_risk:
-    st.subheader("Recession Risk")
-    if not rec.empty:
-        risk_counts = rec["recession_risk_level"].value_counts()
-        recent = rec.tail(20)
-        risk_recent = recent["recession_risk_level"].value_counts()
+    fig_risk = go.Figure()
+    # One bar per quarter, uniform height, colored by risk level
+    fig_risk.add_trace(go.Bar(
+        x=rec["year_quarter"],
+        y=[1] * len(rec),
+        marker_color=bar_colors.tolist(),
+        customdata=rec["recession_risk_level"],
+        hovertemplate="<b>%{x}</b><br>Risk: %{customdata}<extra></extra>",
+        showlegend=False,
+    ))
+    # Dummy traces for legend only
+    for label, color in RISK_COLORS.items():
+        fig_risk.add_trace(go.Bar(x=[None], y=[None], name=label, marker_color=color))
 
-        fig = go.Figure(go.Bar(
-            x=list(risk_recent.index),
-            y=list(risk_recent.values),
-            marker_color=[RISK_COLORS.get(r, "#8b9ab3") for r in risk_recent.index],
-            hovertemplate="%{x}: %{y} quarters<extra></extra>",
-        ))
-        apply_layout(fig, title="Last 20 quarters", height=320,
-                     yaxis=dict(gridcolor="#21262d", showline=False, zeroline=False, title="Quarters"))
-        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+    fig_risk.update_layout(
+        **{k: v for k, v in PLOTLY_LAYOUT.items() if k not in ("yaxis", "xaxis", "margin")},
+        barmode="stack",
+        bargap=0.05,
+        height=130,
+        yaxis=dict(showticklabels=False, showgrid=False, zeroline=False, fixedrange=True),
+        xaxis=dict(gridcolor="#21262d", showline=False, zeroline=False,
+                   tickangle=-90, tickfont=dict(size=10)),
+        legend=dict(bgcolor="rgba(0,0,0,0)", bordercolor="rgba(0,0,0,0)",
+                    orientation="h", yanchor="bottom", y=1.05, xanchor="left", x=0),
+        margin=dict(l=10, r=10, t=40, b=70),
+    )
+    st.plotly_chart(fig_risk, use_container_width=True, config={"displayModeBar": False})
 
     risk_summary = ov.get("risk_assessment_summary", "")
     if risk_summary:
