@@ -36,7 +36,7 @@ html, body, [class*="css"], .stApp {
     background: linear-gradient(135deg, #f0f7ff 0%, #e0efff 55%, #f0f7ff 100%);
     border-bottom: 1px solid rgba(76,155,232,0.15);
     padding: 40px 4px 30px;
-    margin: -4rem -4rem 2rem -4rem;
+    margin: 0 -4rem 2rem -4rem;
     position: relative; overflow: hidden;
 }
 .hero::before {
