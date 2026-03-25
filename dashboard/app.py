@@ -33,8 +33,8 @@ html, body, [class*="css"], .stApp {
 
 /* ── Hero banner ── */
 .hero {
-    background: linear-gradient(135deg, #060d1a 0%, #0d1e36 55%, #060d1a 100%);
-    border-bottom: 1px solid rgba(76,155,232,0.12);
+    background: linear-gradient(135deg, #f0f7ff 0%, #e0efff 55%, #f0f7ff 100%);
+    border-bottom: 1px solid rgba(76,155,232,0.15);
     padding: 40px 4px 30px;
     margin: -4rem -4rem 2rem -4rem;
     position: relative; overflow: hidden;
@@ -42,28 +42,28 @@ html, body, [class*="css"], .stApp {
 .hero::before {
     content: ''; position: absolute; top: -120px; left: -80px;
     width: 500px; height: 500px;
-    background: radial-gradient(circle, rgba(76,155,232,0.07) 0%, transparent 65%);
+    background: radial-gradient(circle, rgba(76,155,232,0.12) 0%, transparent 65%);
     pointer-events: none;
 }
 .hero::after {
     content: ''; position: absolute; bottom: -80px; right: 5%;
     width: 300px; height: 300px;
-    background: radial-gradient(circle, rgba(129,140,248,0.05) 0%, transparent 65%);
+    background: radial-gradient(circle, rgba(129,140,248,0.1) 0%, transparent 65%);
     pointer-events: none;
 }
 .hero-title {
     font-size: 2.4rem; font-weight: 800; letter-spacing: -0.035em;
-    line-height: 1.05; margin: 0 0 8px 0; color: #eaf2ff;
+    line-height: 1.05; margin: 0 0 8px 0; color: #0a2351;
 }
 .hero-title .grad {
-    background: linear-gradient(90deg, #60a5fa, #818cf8);
+    background: linear-gradient(90deg, #2563eb, #7c3aed);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
-.hero-sub { color: #3d5a73; font-size: 0.9rem; font-weight: 400; margin: 0 0 22px 0; }
+.hero-sub { color: #5a7a95; font-size: 0.9rem; font-weight: 400; margin: 0 0 22px 0; }
 .hero-badges { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .badge-live {
     display: inline-flex; align-items: center; gap: 7px;
-    background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.2);
+    background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.25);
     border-radius: 20px; padding: 5px 14px;
     font-size: 0.7rem; font-weight: 700; color: #22c55e;
     text-transform: uppercase; letter-spacing: 0.07em;
@@ -77,20 +77,21 @@ html, body, [class*="css"], .stApp {
     50%      { opacity:0.6; box-shadow: 0 0 0 5px rgba(34,197,94,0); }
 }
 .badge-run {
-    font-size: 0.72rem; color: #2d4a5e;
-    background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.05);
+    font-size: 0.72rem; color: #5a7a95;
+    background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.08);
     border-radius: 20px; padding: 5px 14px;
 }
 
 /* ── KPI cards ── */
 .kpi-row { display: grid; grid-template-columns: repeat(5,1fr); gap: 14px; margin-bottom: 6px; }
 .kpi-card {
-    background: #080f1d; border: 1px solid #142035;
+    background: #ffffff; border: 1px solid #e5ecf2;
     border-radius: 14px; padding: 20px 18px 16px;
     position: relative; overflow: hidden;
     transition: border-color .25s, box-shadow .25s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
-.kpi-card:hover { border-color: #1e3a5f; box-shadow: 0 4px 24px rgba(0,0,0,0.4); }
+.kpi-card:hover { border-color: #4c9be8; box-shadow: 0 4px 12px rgba(76,155,232,0.15); }
 .kpi-card::before {
     content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
     background: linear-gradient(90deg, #4c9be8, #818cf8); border-radius: 14px 14px 0 0;
@@ -100,34 +101,35 @@ html, body, [class*="css"], .stApp {
 .kpi-card.c-orange::before { background: linear-gradient(90deg,#f97316,#ea580c); }
 .kpi-card.c-red::before    { background: linear-gradient(90deg,#ef4444,#dc2626); }
 .kpi-lbl {
-    font-size: 0.62rem; font-weight: 700; color: #2d4a5e;
+    font-size: 0.62rem; font-weight: 700; color: #7a8fa0;
     text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 10px;
 }
-.kpi-val { font-size: 2rem; font-weight: 700; color: #dde8f4; line-height: 1; margin-bottom: 10px; letter-spacing: -0.03em; }
+.kpi-val { font-size: 2rem; font-weight: 700; color: #0f172a; line-height: 1; margin-bottom: 10px; letter-spacing: -0.03em; }
 .kpi-dl { font-size: 0.74rem; font-weight: 600; padding: 3px 9px; border-radius: 6px; display: inline-block; }
 .kpi-dl.pos  { color: #22c55e; background: rgba(34,197,94,0.1); }
 .kpi-dl.neg  { color: #ef4444; background: rgba(239,68,68,0.1); }
-.kpi-dl.info { color: #4a6480; background: rgba(74,100,128,0.12); }
-.kpi-sub { font-size: 0.71rem; color: #253850; margin-top: 7px; }
-.period-note { font-size: 0.68rem; color: #1e3045; margin: 5px 0 24px 2px; letter-spacing: 0.01em; }
+.kpi-dl.info { color: #7a8fa0; background: rgba(122,143,160,0.1); }
+.kpi-sub { font-size: 0.71rem; color: #7a8fa0; margin-top: 7px; }
+.period-note { font-size: 0.68rem; color: #a5b4c1; margin: 5px 0 24px 2px; letter-spacing: 0.01em; }
 
 /* ── Economy Snapshot card ── */
 .snapshot {
-    background: #080f1d; border: 1px solid #142035;
+    background: #ffffff; border: 1px solid #e5ecf2;
     border-radius: 16px; padding: 24px 28px; margin-bottom: 8px;
     position: relative; overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 .snapshot::before {
     content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
     background: linear-gradient(90deg, #4c9be8 0%, #818cf8 50%, #4c9be8 100%);
 }
 .snap-title {
-    font-size: 0.7rem; font-weight: 700; color: #2d4a5e;
+    font-size: 0.7rem; font-weight: 700; color: #7a8fa0;
     text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 14px;
     display: flex; align-items: center; gap: 8px;
 }
 .snap-status {
-    font-size: 1.05rem; font-weight: 600; color: #c8d6e5;
+    font-size: 1.05rem; font-weight: 600; color: #0f172a;
     margin-bottom: 12px; line-height: 1.5;
 }
 .snap-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 14px; }
@@ -135,21 +137,21 @@ html, body, [class*="css"], .stApp {
 .snap-col-title.green { color: #16a34a; }
 .snap-col-title.red   { color: #dc2626; }
 .snap-col-title.blue  { color: #3b82f6; }
-.snap-item { font-size: 0.82rem; color: #4a6480; margin-bottom: 5px; padding-left: 12px; position: relative; }
-.snap-item::before { content: '·'; position: absolute; left: 0; color: #2d4a5e; }
+.snap-item { font-size: 0.82rem; color: #5a7a95; margin-bottom: 5px; padding-left: 12px; position: relative; }
+.snap-item::before { content: '·'; position: absolute; left: 0; color: #a5b4c1; }
 .snap-action {
-    margin-top: 16px; padding-top: 14px; border-top: 1px solid #0f1e30;
-    font-size: 0.82rem; color: #3d5a73; line-height: 1.6;
+    margin-top: 16px; padding-top: 14px; border-top: 1px solid #e5ecf2;
+    font-size: 0.82rem; color: #5a7a95; line-height: 1.6;
 }
-.snap-action strong { color: #5a7a95; font-weight: 600; }
+.snap-action strong { color: #2c5a9a; font-weight: 600; }
 
 /* ── Section headers ── */
 .sec-hdr { display: flex; align-items: center; gap: 10px; margin: 8px 0 4px 0; }
 .sec-bar { width: 3px; height: 18px; border-radius: 2px; flex-shrink: 0; background: linear-gradient(180deg,#4c9be8,#818cf8); }
-.sec-txt { font-size: 1.05rem; font-weight: 600; color: #8bafc8; letter-spacing: -0.01em; }
+.sec-txt { font-size: 1.05rem; font-weight: 600; color: #0f172a; letter-spacing: -0.01em; }
 
 /* ── Divider ── */
-.sec-div { height: 1px; background: linear-gradient(to right,#0f1e30,transparent); margin: 24px 0; }
+.sec-div { height: 1px; background: linear-gradient(to right,#e5ecf2,transparent); margin: 24px 0; }
 
 footer, #MainMenu, header { visibility: hidden !important; }
 </style>
@@ -481,22 +483,24 @@ _pos_html = "".join(f'<div class="snap-item">{p}</div>' for p in _pos)
 _con_html = "".join(f'<div class="snap-item">{c}</div>' for c in _con)
 _sig_html = "".join(f'<div class="snap-item">{s}</div>' for s in _sig)
 
-st.markdown(f"""
+_pos_section = f"<div class='snap-col-title green'>✓ What's working</div>{_pos_html}" if _pos else ""
+_sig_section = f"<div class='snap-col-title blue' style='margin-top:10px'>→ Neutral signals</div>{_sig_html}" if _sig else ""
+_con_section = f"<div class='snap-col-title red'>⚠ Concerns</div>{_con_html}" if _con else ""
+_action_section = f"<div class='snap-action'><strong>What this means →</strong> {_action}</div>" if _action else ""
+
+snapshot_html = f"""
 <div class="snapshot">
   <div class="snap-title">📡 Economy Snapshot</div>
   <div class="snap-status">{_icon} <strong>{_headline}</strong> {_detail}</div>
   <div class="snap-cols">
-    <div>
-      {"<div class='snap-col-title green'>✓ What's working</div>" + _pos_html if _pos else ""}
-      {"<div class='snap-col-title blue' style='margin-top:10px'>→ Neutral signals</div>" + _sig_html if _sig else ""}
-    </div>
-    <div>
-      {"<div class='snap-col-title red'>⚠ Concerns</div>" + _con_html if _con else ""}
-    </div>
+    <div>{_pos_section}{_sig_section}</div>
+    <div>{_con_section}</div>
   </div>
-  {"<div class='snap-action'><strong>What this means →</strong> " + _action + "</div>" if _action else ""}
+  {_action_section}
 </div>
-""", unsafe_allow_html=True)
+"""
+
+st.markdown(snapshot_html, unsafe_allow_html=True)
 
 sec_div()
 
