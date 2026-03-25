@@ -24,21 +24,134 @@ st.set_page_config(
 # ── Custom CSS ──────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-    .main { background-color: #0e1117; }
-    .metric-card {
-        background: #1c2333;
-        border-radius: 10px;
-        padding: 16px 20px;
-        border-left: 4px solid #4c9be8;
-    }
-    .risk-high   { border-left-color: #ef4444 !important; }
-    .risk-moderate { border-left-color: #f97316 !important; }
-    .risk-emerging { border-left-color: #eab308 !important; }
-    .risk-low    { border-left-color: #22c55e !important; }
-    h1 { font-size: 2rem !important; }
-    .stMetric label { font-size: 0.75rem !important; color: #8b9ab3 !important; text-transform: uppercase; letter-spacing: 0.05em; }
-    .stMetric .metric-container div { font-size: 1.6rem !important; }
-    footer { visibility: hidden; }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+html, body, [class*="css"], .stApp {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+.block-container { padding-top: 0 !important; padding-bottom: 3rem !important; max-width: 1400px !important; }
+
+/* ── Hero banner ── */
+.hero {
+    background: linear-gradient(135deg, #060d1a 0%, #0d1e36 55%, #060d1a 100%);
+    border-bottom: 1px solid rgba(76,155,232,0.12);
+    padding: 40px 4px 30px;
+    margin: -4rem -4rem 2rem -4rem;
+    position: relative; overflow: hidden;
+}
+.hero::before {
+    content: ''; position: absolute; top: -120px; left: -80px;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(76,155,232,0.07) 0%, transparent 65%);
+    pointer-events: none;
+}
+.hero::after {
+    content: ''; position: absolute; bottom: -80px; right: 5%;
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(129,140,248,0.05) 0%, transparent 65%);
+    pointer-events: none;
+}
+.hero-title {
+    font-size: 2.4rem; font-weight: 800; letter-spacing: -0.035em;
+    line-height: 1.05; margin: 0 0 8px 0; color: #eaf2ff;
+}
+.hero-title .grad {
+    background: linear-gradient(90deg, #60a5fa, #818cf8);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.hero-sub { color: #3d5a73; font-size: 0.9rem; font-weight: 400; margin: 0 0 22px 0; }
+.hero-badges { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.badge-live {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.2);
+    border-radius: 20px; padding: 5px 14px;
+    font-size: 0.7rem; font-weight: 700; color: #22c55e;
+    text-transform: uppercase; letter-spacing: 0.07em;
+}
+.dot-live {
+    width: 7px; height: 7px; background: #22c55e; border-radius: 50%;
+    animation: livepulse 2.2s ease-in-out infinite;
+}
+@keyframes livepulse {
+    0%,100% { opacity:1; box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
+    50%      { opacity:0.6; box-shadow: 0 0 0 5px rgba(34,197,94,0); }
+}
+.badge-run {
+    font-size: 0.72rem; color: #2d4a5e;
+    background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 20px; padding: 5px 14px;
+}
+
+/* ── KPI cards ── */
+.kpi-row { display: grid; grid-template-columns: repeat(5,1fr); gap: 14px; margin-bottom: 6px; }
+.kpi-card {
+    background: #080f1d; border: 1px solid #142035;
+    border-radius: 14px; padding: 20px 18px 16px;
+    position: relative; overflow: hidden;
+    transition: border-color .25s, box-shadow .25s;
+}
+.kpi-card:hover { border-color: #1e3a5f; box-shadow: 0 4px 24px rgba(0,0,0,0.4); }
+.kpi-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, #4c9be8, #818cf8); border-radius: 14px 14px 0 0;
+}
+.kpi-card.c-green::before  { background: linear-gradient(90deg,#22c55e,#16a34a); }
+.kpi-card.c-yellow::before { background: linear-gradient(90deg,#eab308,#ca8a04); }
+.kpi-card.c-orange::before { background: linear-gradient(90deg,#f97316,#ea580c); }
+.kpi-card.c-red::before    { background: linear-gradient(90deg,#ef4444,#dc2626); }
+.kpi-lbl {
+    font-size: 0.62rem; font-weight: 700; color: #2d4a5e;
+    text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 10px;
+}
+.kpi-val { font-size: 2rem; font-weight: 700; color: #dde8f4; line-height: 1; margin-bottom: 10px; letter-spacing: -0.03em; }
+.kpi-dl { font-size: 0.74rem; font-weight: 600; padding: 3px 9px; border-radius: 6px; display: inline-block; }
+.kpi-dl.pos  { color: #22c55e; background: rgba(34,197,94,0.1); }
+.kpi-dl.neg  { color: #ef4444; background: rgba(239,68,68,0.1); }
+.kpi-dl.info { color: #4a6480; background: rgba(74,100,128,0.12); }
+.kpi-sub { font-size: 0.71rem; color: #253850; margin-top: 7px; }
+.period-note { font-size: 0.68rem; color: #1e3045; margin: 5px 0 24px 2px; letter-spacing: 0.01em; }
+
+/* ── Economy Snapshot card ── */
+.snapshot {
+    background: #080f1d; border: 1px solid #142035;
+    border-radius: 16px; padding: 24px 28px; margin-bottom: 8px;
+    position: relative; overflow: hidden;
+}
+.snapshot::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, #4c9be8 0%, #818cf8 50%, #4c9be8 100%);
+}
+.snap-title {
+    font-size: 0.7rem; font-weight: 700; color: #2d4a5e;
+    text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+}
+.snap-status {
+    font-size: 1.05rem; font-weight: 600; color: #c8d6e5;
+    margin-bottom: 12px; line-height: 1.5;
+}
+.snap-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 14px; }
+.snap-col-title { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+.snap-col-title.green { color: #16a34a; }
+.snap-col-title.red   { color: #dc2626; }
+.snap-col-title.blue  { color: #3b82f6; }
+.snap-item { font-size: 0.82rem; color: #4a6480; margin-bottom: 5px; padding-left: 12px; position: relative; }
+.snap-item::before { content: '·'; position: absolute; left: 0; color: #2d4a5e; }
+.snap-action {
+    margin-top: 16px; padding-top: 14px; border-top: 1px solid #0f1e30;
+    font-size: 0.82rem; color: #3d5a73; line-height: 1.6;
+}
+.snap-action strong { color: #5a7a95; font-weight: 600; }
+
+/* ── Section headers ── */
+.sec-hdr { display: flex; align-items: center; gap: 10px; margin: 8px 0 4px 0; }
+.sec-bar { width: 3px; height: 18px; border-radius: 2px; flex-shrink: 0; background: linear-gradient(180deg,#4c9be8,#818cf8); }
+.sec-txt { font-size: 1.05rem; font-weight: 600; color: #8bafc8; letter-spacing: -0.01em; }
+
+/* ── Divider ── */
+.sec-div { height: 1px; background: linear-gradient(to right,#0f1e30,transparent); margin: 24px 0; }
+
+footer, #MainMenu, header { visibility: hidden !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -182,13 +295,26 @@ def apply_layout(fig, **kwargs):
     return fig
 
 
+# ── UI helpers ──────────────────────────────────────────────────────────────────
+def sec_header(title):
+    st.markdown(
+        f'<div class="sec-hdr"><div class="sec-bar"></div><div class="sec-txt">{title}</div></div>',
+        unsafe_allow_html=True,
+    )
+
+def sec_div():
+    st.markdown('<div class="sec-div"></div>', unsafe_allow_html=True)
+
 # ── Header ──────────────────────────────────────────────────────────────────────
-st.markdown("## 📊 US Economy Pulse")
-st.markdown(
-    "<p style='color:#8b9ab3; margin-top:-12px; font-size:0.9rem;'>"
-    "Live indicators pulled from FRED · Transformed with dbt · Updated weekly</p>",
-    unsafe_allow_html=True,
-)
+st.markdown("""
+<div class="hero">
+  <div class="hero-title">US Economy <span class="grad">Pulse</span></div>
+  <div class="hero-sub">Live indicators from FRED · Transformed with dbt · Updated weekly</div>
+  <div class="hero-badges">
+    <span class="badge-live"><span class="dot-live"></span>Live</span>
+  </div>
+</div>
+""", unsafe_allow_html=True)
 
 with st.spinner("Loading latest data..."):
     _data = load_all_data()
@@ -201,91 +327,181 @@ if ov.empty:
     st.error("No data found. Make sure the pipeline has run and the views exist in Supabase.")
     st.stop()
 
+# Append "last run" badge into hero area
 last_updated = ov.get("dbt_loaded_at", "")
 if last_updated:
     try:
         ts = pd.to_datetime(last_updated)
-        st.caption(f"Last pipeline run: {ts.strftime('%B %d, %Y at %H:%M UTC')}")
+        st.markdown(
+            f"<div style='margin:-18px 0 20px 2px'>"
+            f"<span class='badge-run'>Last pipeline run: {ts.strftime('%b %d, %Y · %H:%M UTC')}</span>"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
     except Exception:
         pass
 
-st.divider()
-
 # ── KPI row ─────────────────────────────────────────────────────────────────────
-col1, col2, col3, col4, col5 = st.columns(5)
+def _pct(v, d=1):
+    try: return f"{float(v):.{d}f}%"
+    except: return "N/A"
 
-def fmt_pct(val, decimals=1):
-    try:
-        return f"{float(val):.{decimals}f}%"
-    except (TypeError, ValueError):
-        return "N/A"
-
-def delta_color(val, invert=False):
+def _dl(val, invert=False, label=None):
+    if label is not None:
+        return f'<span class="kpi-dl info">{label}</span>'
     try:
         v = float(val)
-        good = v < 0 if invert else v > 0
-        return "normal" if good else "inverse"
-    except (TypeError, ValueError):
-        return "off"
+        good = (v < 0) if invert else (v > 0)
+        cls  = "pos" if good else "neg"
+        arr  = "↑" if v > 0 else "↓"
+        return f'<span class="kpi-dl {cls}">{arr} {abs(v):.1f}%</span>'
+    except:
+        return '<span class="kpi-dl info">—</span>'
 
-with col1:
-    st.metric(
-        "Real GDP Growth (QoQ)",
-        fmt_pct(ov.get("qoq_growth_pct")),
-        delta=fmt_pct(ov.get("qoq_growth_pct")),
-        delta_color=delta_color(ov.get("qoq_growth_pct")),
-    )
+risk        = str(ov.get("recession_risk_level", "Unknown"))
+score       = ov.get("recession_intensity_score", "—")
+sev         = str(ov.get("inflation_severity_category", ""))
+fed_dir     = str(ov.get("fedfunds_direction", ""))
+_rmap       = {"Low":"c-green","Emerging":"c-yellow","Moderate":"c-orange","High":"c-red"}
+risk_cls    = _rmap.get(risk, "")
 
-with col2:
-    st.metric(
-        "Inflation (YoY)",
-        fmt_pct(ov.get("yoy_inflation_rate_pct")),
-    )
-    sev = ov.get("inflation_severity_category", "")
-    if sev:
-        st.caption(f"Severity: {sev}")
+try:
+    _gdp_cls = "" if float(ov.get("qoq_growth_pct", 0) or 0) >= 0 else "c-red"
+except: _gdp_cls = ""
+try:
+    _uchg = float(ov.get("unemployment_yoy_change_pct", 0) or 0)
+    _unemp_cls = "c-red" if _uchg > 1.5 else "c-yellow" if _uchg > 0.5 else ""
+except: _unemp_cls = ""
 
-with col3:
-    st.metric(
-        "Unemployment Rate",
-        fmt_pct(ov.get("unemployment_rate_pct")),
-        delta=fmt_pct(ov.get("unemployment_yoy_change_pct")),
-        delta_color=delta_color(ov.get("unemployment_yoy_change_pct"), invert=True),
-    )
-
-with col4:
-    st.metric(
-        "Fed Funds Rate",
-        fmt_pct(ov.get("fedfunds_rate_pct")),
-    )
-    direction = ov.get("fedfunds_direction", "")
-    if direction:
-        st.caption(f"Trend: {direction}")
-
-with col5:
-    risk = ov.get("recession_risk_level", "Unknown")
-    score = ov.get("recession_intensity_score", "—")
-    st.metric(
-        "Recession Risk",
-        str(risk),
-    )
-    st.caption(f"Intensity score: {score}")
-
-# Period context — clarify which quarter/month each figure comes from
 _q_period = rec["year_quarter"].iloc[-1] if not rec.empty else ""
 _m_period = infl["year_month"].iloc[-1] if not infl.empty else ""
-_parts = []
-if _q_period:
-    _parts.append(f"GDP & recession risk: {_q_period}")
-if _m_period:
-    _parts.append(f"inflation, employment & rates: {_m_period}")
-if _parts:
-    st.caption("Latest data — " + " · ".join(_parts))
+_period_txt = " · ".join(filter(None, [
+    f"GDP & recession: {_q_period}" if _q_period else "",
+    f"inflation, employment & rates: {_m_period}" if _m_period else "",
+]))
 
-st.divider()
+st.markdown(f"""
+<div class="kpi-row">
+  <div class="kpi-card {_gdp_cls}">
+    <div class="kpi-lbl">Real GDP Growth (QoQ)</div>
+    <div class="kpi-val">{_pct(ov.get("qoq_growth_pct"))}</div>
+    {_dl(ov.get("qoq_growth_pct"))}
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-lbl">Inflation (YoY)</div>
+    <div class="kpi-val">{_pct(ov.get("yoy_inflation_rate_pct"))}</div>
+    {_dl(None, label=sev) if sev else ""}
+  </div>
+  <div class="kpi-card {_unemp_cls}">
+    <div class="kpi-lbl">Unemployment Rate</div>
+    <div class="kpi-val">{_pct(ov.get("unemployment_rate_pct"))}</div>
+    {_dl(ov.get("unemployment_yoy_change_pct"), invert=True)}
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-lbl">Fed Funds Rate</div>
+    <div class="kpi-val">{_pct(ov.get("fedfunds_rate_pct"))}</div>
+    {_dl(None, label=fed_dir) if fed_dir else ""}
+  </div>
+  <div class="kpi-card {risk_cls}">
+    <div class="kpi-lbl">Recession Risk</div>
+    <div class="kpi-val">{risk}</div>
+    <div class="kpi-sub">Intensity: {score} / 15</div>
+  </div>
+</div>
+{"<div class='period-note'>Latest data — " + _period_txt + "</div>" if _period_txt else ""}
+""", unsafe_allow_html=True)
+
+sec_div()
+
+# ── Economy Snapshot ────────────────────────────────────────────────────────────
+def _build_snapshot(ov, rec, infl):
+    """Synthesise all indicators into a plain-English big-picture card."""
+    risk      = str(ov.get("recession_risk_level", "Unknown"))
+    score     = ov.get("recession_intensity_score", 1)
+    positives, concerns, signals = [], [], []
+
+    # GDP
+    try:
+        g = float(ov.get("qoq_growth_pct", 0) or 0)
+        if g > 0.5:   positives.append(f"GDP is growing (+{g:.1f}% QoQ)")
+        elif g > 0:   signals.append(f"GDP growth is modest but positive (+{g:.1f}% QoQ)")
+        else:         concerns.append(f"GDP contracted this quarter ({g:.1f}% QoQ)")
+    except: pass
+
+    # Unemployment
+    try:
+        u   = float(ov.get("unemployment_rate_pct", 0) or 0)
+        uc  = float(ov.get("unemployment_yoy_change_pct", 0) or 0)
+        if u < 4.5 and uc < 0.5:  positives.append(f"unemployment near historical lows ({u:.1f}%)")
+        elif uc > 1.5:             concerns.append(f"unemployment rising fast (+{uc:.1f}% YoY) — a classic early-recession signal")
+        elif uc > 0:               signals.append(f"unemployment ticking up ({u:.1f}%, +{uc:.1f}% YoY) — worth watching")
+        else:                      positives.append(f"unemployment stable at {u:.1f}%")
+    except: pass
+
+    # Inflation
+    try:
+        inf = float(ov.get("yoy_inflation_rate_pct", 0) or 0)
+        if inf <= 2.5:   positives.append(f"inflation near the Fed's 2% target ({inf:.1f}% YoY)")
+        elif inf <= 4.0: signals.append(f"inflation is moderating but still elevated ({inf:.1f}% YoY)")
+        else:            concerns.append(f"inflation running hot at {inf:.1f}% — above the 2% target")
+    except: pass
+
+    # Fed funds
+    try:
+        fed = float(ov.get("fedfunds_rate_pct", 0) or 0)
+        fd  = str(ov.get("fedfunds_direction", ""))
+        if fd == "Falling":   signals.append(f"Fed cutting rates ({fed:.1f}%) — easing financial conditions")
+        elif fd == "Rising":  concerns.append(f"Fed raising rates ({fed:.1f}%) — tightening credit conditions")
+        else:                 signals.append(f"Fed holding rates steady at {fed:.1f}%")
+    except: pass
+
+    # Overall verdict
+    verdict_map = {
+        "Low":      ("🟢", "Economy looks healthy.", "No recession signals. Growth is on track and conditions are stable."),
+        "Emerging": ("🟡", "Early warning signs are appearing.", "The economy is still growing but cracks are forming. Monitor closely over the next 1–2 quarters."),
+        "Moderate": ("🟠", "Multiple caution signals active.", "Several indicators are deteriorating simultaneously. Historically, this pattern precedes slowdowns within 6–12 months."),
+        "High":     ("🔴", "Conditions consistent with recession.", "Most indicators are flashing red. Historical patterns suggest elevated probability of contraction."),
+    }
+    icon, headline, detail = verdict_map.get(risk, ("⚪", "Data unavailable.", ""))
+
+    # Action implications
+    action_map = {
+        "Low":      "For investors: risk assets typically perform well in this environment. For businesses: a reasonable time to plan expansion. For consumers: labor market is supportive.",
+        "Emerging": "For investors: consider reviewing portfolio defensiveness. For businesses: revisit hiring and capex plans. For policymakers: pre-emptive monitoring warranted.",
+        "Moderate": "For investors: consider tilting toward defensive sectors (utilities, healthcare, consumer staples). For businesses: conserve cash, delay non-essential capex. For policymakers: stimulus tools should be on standby.",
+        "High":     "For investors: defensive positioning advised — bonds, cash, defensive equities. For businesses: protect margins, freeze non-critical hiring. For policymakers: coordinated fiscal and monetary response may be needed.",
+    }
+    action = action_map.get(risk, "")
+
+    return icon, headline, detail, positives, concerns, signals, action
+
+_icon, _headline, _detail, _pos, _con, _sig, _action = _build_snapshot(ov, rec, infl)
+
+_pos_html = "".join(f'<div class="snap-item">{p}</div>' for p in _pos)
+_con_html = "".join(f'<div class="snap-item">{c}</div>' for c in _con)
+_sig_html = "".join(f'<div class="snap-item">{s}</div>' for s in _sig)
+
+st.markdown(f"""
+<div class="snapshot">
+  <div class="snap-title">📡 Economy Snapshot</div>
+  <div class="snap-status">{_icon} <strong>{_headline}</strong> {_detail}</div>
+  <div class="snap-cols">
+    <div>
+      {"<div class='snap-col-title green'>✓ What's working</div>" + _pos_html if _pos else ""}
+      {"<div class='snap-col-title blue' style='margin-top:10px'>→ Neutral signals</div>" + _sig_html if _sig else ""}
+    </div>
+    <div>
+      {"<div class='snap-col-title red'>⚠ Concerns</div>" + _con_html if _con else ""}
+    </div>
+  </div>
+  {"<div class='snap-action'><strong>What this means →</strong> " + _action + "</div>" if _action else ""}
+</div>
+""", unsafe_allow_html=True)
+
+sec_div()
 
 # ── Row 1: GDP (full width) ─────────────────────────────────────────────────────
-st.subheader("GDP Growth — Quarter over Quarter")
+sec_header("GDP Growth — Quarter over Quarter")
 if not rec.empty:
     colors = ["#ef4444" if v < 0 else "#4c9be8" for v in rec["qoq_growth_pct"].fillna(0)]
     fig = go.Figure(go.Bar(
@@ -305,7 +521,7 @@ if not rec.empty:
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 # ── Row 1b: Recession Risk timeline strip ───────────────────────────────────────
-st.subheader("Recession Risk — Quarter by Quarter")
+sec_header("Recession Risk — Quarter by Quarter")
 if not rec.empty:
     bar_colors = rec["recession_risk_level"].map(RISK_COLORS).fillna("#8b9ab3")
 
@@ -352,10 +568,10 @@ if not rec.empty:
             unsafe_allow_html=True,
         )
 
-st.divider()
+sec_div()
 
 # ── Row 2: Inflation + Fed Funds ────────────────────────────────────────────────
-st.subheader("Inflation & Monetary Policy")
+sec_header("Inflation & Monetary Policy")
 if not infl.empty:
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
@@ -388,13 +604,13 @@ if not infl.empty:
     )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
-st.divider()
+sec_div()
 
 # ── Row 3: Unemployment + Housing ───────────────────────────────────────────────
 col_unemp, col_house = st.columns(2)
 
 with col_unemp:
-    st.subheader("Unemployment Rate")
+    sec_header("Unemployment Rate")
     if not emp.empty:
         trend_color_map = {"Rising": "#ef4444", "Declining": "#22c55e", "Flat": "#eab308"}
         colors = [trend_color_map.get(t, "#4c9be8") for t in emp["unemployment_trend"].fillna("Flat")]
@@ -414,7 +630,7 @@ with col_unemp:
         st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 with col_house:
-    st.subheader("Housing Starts (thousands)")
+    sec_header("Housing Starts (thousands)")
     if not emp.empty:
         fig = go.Figure(go.Scatter(
             x=emp["period_date_key"],
@@ -429,10 +645,10 @@ with col_house:
                      yaxis=dict(gridcolor="#21262d", showline=False, zeroline=False, title="Thousands"))
         st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
-st.divider()
+sec_div()
 
 # ── Row 4: Recession intensity score over time ──────────────────────────────────
-st.subheader("Recession Intensity Score Over Time")
+sec_header("Recession Intensity Score Over Time")
 if not rec.empty:
     risk_level_colors = [RISK_COLORS.get(r, "#8b9ab3") for r in rec["recession_risk_level"].fillna("Low")]
     fig = go.Figure(go.Scatter(
@@ -460,7 +676,7 @@ if not rec.empty:
                             title="Intensity (0–15)", range=[0, 15]))
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
-st.divider()
+sec_div()
 
 # ── Data table (expandable) ──────────────────────────────────────────────────────
 with st.expander("📋 View raw recession data table", expanded=False):
