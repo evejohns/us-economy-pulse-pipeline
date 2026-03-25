@@ -318,7 +318,7 @@ if not rec.empty:
         fig_risk.add_trace(go.Bar(x=[None], y=[None], name=label, marker_color=color))
 
     fig_risk.update_layout(
-        **{k: v for k, v in PLOTLY_LAYOUT.items() if k not in ("yaxis", "xaxis", "margin")},
+        **{k: v for k, v in PLOTLY_LAYOUT.items() if k not in ("yaxis", "xaxis", "margin", "legend", "hovermode")},
         barmode="stack",
         bargap=0.05,
         height=130,
