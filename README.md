@@ -10,8 +10,6 @@ A production-grade data pipeline that ingests, transforms, and monitors six crit
 
 **[→ View the live dashboard](https://us-economy-pulse-pipeline-b3qs5emwiyydwtlvav4aeg.streamlit.app/)**
 
-![Dashboard screenshot](docs/screenshots/dashboard.png)
-
 ## Architecture
 
 ```
