@@ -296,6 +296,12 @@ if not rec.empty:
     ))
     fig.add_hline(y=0, line_color="#555", line_width=1)
     apply_layout(fig, title="", height=320)
+    fig.update_xaxes(
+        tickmode="array",
+        tickvals=[q for q in rec["year_quarter"] if q.endswith("-Q1")],
+        ticktext=[q.split("-")[0] for q in rec["year_quarter"] if q.endswith("-Q1")],
+        tickangle=0,
+    )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 # ── Row 1b: Recession Risk timeline strip ───────────────────────────────────────
