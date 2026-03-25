@@ -52,20 +52,20 @@ html, body, [class*="css"], .stApp {
     pointer-events: none;
 }
 .hero-title {
-    font-size: 2.4rem; font-weight: 800; letter-spacing: -0.035em;
-    line-height: 1.05; margin: 0 0 8px 0; color: #0a2351;
+    font-size: 2.8rem; font-weight: 800; letter-spacing: -0.035em;
+    line-height: 1.05; margin: 0 0 10px 0; color: #0a2351;
 }
 .hero-title .grad {
     background: linear-gradient(90deg, #2563eb, #7c3aed);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
-.hero-sub { color: #5a7a95; font-size: 0.9rem; font-weight: 400; margin: 0 0 22px 0; }
+.hero-sub { color: #5a7a95; font-size: 1rem; font-weight: 400; margin: 0 0 22px 0; }
 .hero-badges { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .badge-live {
     display: inline-flex; align-items: center; gap: 7px;
     background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.25);
-    border-radius: 20px; padding: 5px 14px;
-    font-size: 0.7rem; font-weight: 700; color: #22c55e;
+    border-radius: 20px; padding: 6px 16px;
+    font-size: 0.75rem; font-weight: 700; color: #22c55e;
     text-transform: uppercase; letter-spacing: 0.07em;
 }
 .dot-live {
@@ -77,9 +77,9 @@ html, body, [class*="css"], .stApp {
     50%      { opacity:0.6; box-shadow: 0 0 0 5px rgba(34,197,94,0); }
 }
 .badge-run {
-    font-size: 0.72rem; color: #5a7a95;
+    font-size: 0.8rem; color: #5a7a95;
     background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.08);
-    border-radius: 20px; padding: 5px 14px;
+    border-radius: 20px; padding: 6px 16px;
 }
 
 /* ── KPI cards ── */
@@ -101,16 +101,16 @@ html, body, [class*="css"], .stApp {
 .kpi-card.c-orange::before { background: linear-gradient(90deg,#f97316,#fb923c); }
 .kpi-card.c-red::before    { background: linear-gradient(90deg,#ef4444,#f87171); }
 .kpi-lbl {
-    font-size: 0.62rem; font-weight: 700; color: #7a8fa0;
+    font-size: 0.7rem; font-weight: 700; color: #7a8fa0;
     text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 10px;
 }
-.kpi-val { font-size: 2rem; font-weight: 700; color: #0f172a; line-height: 1; margin-bottom: 10px; letter-spacing: -0.03em; }
-.kpi-dl { font-size: 0.74rem; font-weight: 600; padding: 3px 9px; border-radius: 6px; display: inline-block; }
+.kpi-val { font-size: 2.2rem; font-weight: 700; color: #0f172a; line-height: 1; margin-bottom: 10px; letter-spacing: -0.03em; }
+.kpi-dl { font-size: 0.82rem; font-weight: 600; padding: 4px 10px; border-radius: 6px; display: inline-block; }
 .kpi-dl.pos  { color: #22c55e; background: rgba(34,197,94,0.1); }
 .kpi-dl.neg  { color: #ef4444; background: rgba(239,68,68,0.1); }
 .kpi-dl.info { color: #7a8fa0; background: rgba(122,143,160,0.1); }
-.kpi-sub { font-size: 0.71rem; color: #7a8fa0; margin-top: 7px; }
-.period-note { font-size: 0.68rem; color: #a5b4c1; margin: 5px 0 24px 2px; letter-spacing: 0.01em; }
+.kpi-sub { font-size: 0.8rem; color: #7a8fa0; margin-top: 7px; }
+.period-note { font-size: 0.78rem; color: #a5b4c1; margin: 5px 0 24px 2px; letter-spacing: 0.01em; }
 
 /* ── Economy Snapshot card ── */
 .snapshot {
@@ -120,24 +120,24 @@ html, body, [class*="css"], .stApp {
     box-shadow: 0 2px 20px rgba(0,0,0,0.05);
 }
 .snap-title {
-    font-size: 0.65rem; font-weight: 700; color: #94afc4;
+    font-size: 0.75rem; font-weight: 700; color: #94afc4;
     text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 14px;
     display: flex; align-items: center; gap: 8px;
 }
 .snap-status {
-    font-size: 1.05rem; font-weight: 600; color: #0f172a;
+    font-size: 1.15rem; font-weight: 600; color: #0f172a;
     margin-bottom: 12px; line-height: 1.5;
 }
 .snap-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 14px; }
-.snap-col-title { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+.snap-col-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
 .snap-col-title.green { color: #16a34a; }
 .snap-col-title.red   { color: #dc2626; }
 .snap-col-title.blue  { color: #3b82f6; }
-.snap-item { font-size: 0.82rem; color: #5a7a95; margin-bottom: 5px; padding-left: 12px; position: relative; }
+.snap-item { font-size: 0.92rem; color: #5a7a95; margin-bottom: 6px; padding-left: 14px; position: relative; }
 .snap-item::before { content: '·'; position: absolute; left: 0; color: #a5b4c1; }
 .snap-action {
     margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(0,0,0,0.06);
-    font-size: 0.82rem; color: #5a7a95; line-height: 1.6;
+    font-size: 0.92rem; color: #5a7a95; line-height: 1.7;
 }
 .snap-action strong { color: #2c5a9a; font-weight: 600; }
 
@@ -145,7 +145,7 @@ html, body, [class*="css"], .stApp {
 .sec-hdr { display: flex; align-items: baseline; gap: 0; margin: 8px 0 4px 0; }
 .sec-bar { display: none; }
 .sec-txt {
-    font-size: 1.05rem; font-weight: 700; color: #0f172a; letter-spacing: -0.02em;
+    font-size: 1.2rem; font-weight: 700; color: #0f172a; letter-spacing: -0.02em;
 }
 
 /* ── Divider ── */
